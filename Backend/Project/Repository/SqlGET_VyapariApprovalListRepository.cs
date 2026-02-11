@@ -1,0 +1,54 @@
+﻿using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Project.Data;
+using Project.Model.Domain;
+
+namespace Project.Repository
+{
+    public class SqlGET_VyapariApprovalListRepository : IGET_VyapariApprovalListRepository
+    {
+        private readonly ApplicationDbContext  dbContext;
+        public SqlGET_VyapariApprovalListRepository(ApplicationDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+        public async Task<List<GET_VyapariApprovalList>> getasync(GET_VyapariApprovalListDomain input)
+        {
+            List<GET_VyapariApprovalList> result = new List<GET_VyapariApprovalList>();
+            using(var command = dbContext.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = "SELECT  * FROM [GET_VyapariApprovalList]( '" + input.VYAPARI + "' , '" + input.COMPANYID + "' , '" + input.DEPTID + "'  )";
+                dbContext.Database.OpenConnection();
+
+                using(var reader = await command.ExecuteReaderAsync())
+                {
+                    while(await reader.ReadAsync())
+                    {
+                        result.Add(new GET_VyapariApprovalList
+                        {
+                            MAID = reader.GetString("MAID"),
+                            WEIGHTLESS = reader.GetDouble("WEIGHTLESS"),
+                            WEIGHT = reader.GetString("WEIGHT"),
+                            JAALI = reader.GetInt32("JAALI"),
+                            RATE = reader.GetDouble("RATE"),
+                            TOKEN = reader.GetString("TOKEN"),
+                            VILLAGE = reader.GetString("VILLAGE"),
+                            VYAPARI = reader.GetString("VYAPARI"),
+                            WEIGHTMAXMIN = reader.GetBoolean("WEIGHTMAXMIN"),
+                            APKID = reader.GetString("APKID"),
+                            DPKID = reader.GetString("DPKID"),
+                            FNAME = reader.GetString("FNAME"),
+                            ISAPPORVED = reader.GetBoolean("ISAPPORVED"),
+                            CROP_TYPE = reader.GetString("CROP_TYPE"),
+                            CROPLABEL = reader.GetString("CROPLABEL"),
+                            ISVYAPARIVERIFIED = reader.GetBoolean("ISVYAPARIVERIFIED"),
+                           
+
+                        });
+                    }
+                }
+            }
+            return result;
+        }
+    }
+}

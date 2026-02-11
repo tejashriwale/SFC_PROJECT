@@ -1,0 +1,41 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Project.Model.Domain;
+using Project.Model.DTO;
+using Project.Model.Model;
+using Project.Repository;
+
+namespace Project.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class _SP_DeleteServiceMaster_Controller : ControllerBase
+    {
+        private readonly I_SP_DeleteServiceMaster_Repository repository;
+        private readonly IMapper mapper;
+
+        public _SP_DeleteServiceMaster_Controller(I_SP_DeleteServiceMaster_Repository repository, IMapper mapper)
+        {
+            this.repository = repository;
+            this.mapper = mapper;
+        }
+        [HttpPost]
+        public async Task<IActionResult> getasync([FromBody]_SP_DeleteServiceMaster_ sP_DeleteServiceMaster_)
+        {
+            try
+            {
+                var domain = await repository.getasync(sP_DeleteServiceMaster_);
+
+                var dto = mapper.Map<List<ApiResponseMessageDto>>(domain);
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+    }
+}

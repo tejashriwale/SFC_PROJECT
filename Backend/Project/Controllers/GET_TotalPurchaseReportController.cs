@@ -1,0 +1,39 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Project.Model.Domain;
+using Project.Model.DTO;
+using Project.Repository;
+
+namespace Project.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class GET_TotalPurchaseReportController : ControllerBase
+    {
+        private readonly IGET_TotalPurchaseReportRepository repository;
+        private readonly IMapper mapper;
+
+        public GET_TotalPurchaseReportController(IGET_TotalPurchaseReportRepository repository, IMapper mapper)
+        {
+            this.repository = repository;
+            this.mapper = mapper;
+        }
+        [HttpPost]
+
+        public async Task<IActionResult> Get(GET_TotalPurchaseReportDomain input)
+        {
+            try
+            {
+                var domain = await repository.getasync(input);
+                var dto = mapper.Map<List<GET_TotalPurchaseReportDto>>(domain);
+                return Ok(domain);
+            }
+            catch (Exception ex)
+            {
+                // log if needed
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+    }
+}

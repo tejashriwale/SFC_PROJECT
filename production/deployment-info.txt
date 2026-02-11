@@ -1,0 +1,12 @@
+SFC Full-Stack Application - Production Build 
+Build Date: 31-Dec-25 15:39:05.52 
+ 
+Frontend URL: http://adsvr:333/ 
+Backend URL:  http://adsvr:333/Backend 
+Swagger URL:  http://adsvr:333/Backend/swagger 
+ 
+Deployment Instructions: 
+1. Deploy production\frontend\ to IIS site at http://adsvr:333 
+2. Deploy production\backend\ to IIS application at http://adsvr:333/Backend 
+ 
+For detailed instructions, see DEPLOYMENT.md in the root folder 

@@ -1,0 +1,272 @@
+================================================================================
+                    DATABASE UPDATE WORKFLOW
+================================================================================
+
+This document explains how to check and update the stored procedure
+by getting the actual definition from your database first.
+
+================================================================================
+STEP 1: CHECK CURRENT STATE (No Changes)
+================================================================================
+
+File: Show_Current_SP_Only.sql
+Purpose: Shows what's currently in the database WITHOUT making changes
+
+What it does:
+-------------
+✓ Checks if SP_AddUpdAllTransections exists in database
+✓ Shows all current parameters
+✓ Checks if @PAYMENTDT parameter exists
+✓ Shows stored procedure definition
+✓ Checks if PAYMENTDT column exists in table
+
+How to run:
+-----------
+1. Open SSMS
+2. Connect to: ADSVR\SQLEXPRESS01 (InventoryManagement database)
+3. Open: D:\SFC\Backend\Database_Scripts\Show_Current_SP_Only.sql
+4. Press F5 (Execute)
+
+Expected output:
+---------------
+✓ SP_AddUpdAllTransections EXISTS in database
+
+Current Parameters:
+-------------------
+#   Parameter Name   Data Type   Max Length   Mode
+1   @TRAID          varchar     50           Input
+2   @TRNSR          int         N/A          Input
+3   @TRNSID         varchar     50           Input
+4   @TRNTID         varchar     50           Input
+5   @TRNDT          datetime    N/A          Input
+6   @REFAID         varchar     50           Input
+7   @MAID           varchar     50           Input
+8   @PAMT           float       N/A          Input
+9   @CBAL           float       N/A          Input
+10  @ADVAMT         float       N/A          Input
+11  @ASID           varchar     50           Input
+12  @ISDELETED      bit         N/A          Input
+13  @COMPANYID      varchar     50           Input
+14  @DEPTID         varchar     50           Input
+15  @CROPID         varchar     50           Input
+
+Total Parameters: 15
+
+✗ @PAYMENTDT parameter MISSING
+
+Status: Stored procedure needs update!
+
+================================================================================
+STEP 2: GET FROM DATABASE AND UPDATE
+================================================================================
+
+File: Get_Current_SP_And_Update.sql
+Purpose: Gets actual SP from database, then updates it with PAYMENTDT parameter
+
+What it does:
+-------------
+1. GETS the current stored procedure from database
+2. SHOWS what parameters it currently has
+3. CHECKS if @PAYMENTDT exists
+4. If missing: DROPS old version
+5. CREATES new version with @PAYMENTDT parameter
+6. VERIFIES the update was successful
+7. SHOWS the updated parameter list
+
+How to run:
+-----------
+1. Open SSMS
+2. Connect to: ADSVR\SQLEXPRESS01 (InventoryManagement database)
+3. Open: D:\SFC\Backend\Database_Scripts\Get_Current_SP_And_Update.sql
+4. Press F5 (Execute)
+
+Expected output:
+---------------
+==========================================
+STEP 1: Getting current stored procedure
+==========================================
+
+Current SP_AddUpdAllTransections definition:
+---------------------------------------------
+[Shows full current definition from database]
+
+==========================================
+STEP 2: Current parameters in database:
+==========================================
+
+Order  Parameter      Type    Full_Type       Nullable
+1      @TRAID         varchar varchar(50)     NOT NULL
+2      @TRNSR         int     int             NOT NULL
+...
+15     @CROPID        varchar varchar(50)     NOT NULL
+
+✗ @PAYMENTDT parameter NOT FOUND in database
+Proceeding with update...
+
+✓ Existing procedure dropped
+
+==========================================
+STEP 3: Creating updated procedure
+==========================================
+
+✓ Stored procedure created/updated successfully
+
+==========================================
+VERIFICATION: Updated parameters
+==========================================
+
+Order  Parameter      Type     Full_Type       Status
+1      @TRAID         varchar  varchar(50)
+2      @TRNSR         int      int
+...
+15     @CROPID        varchar  varchar(50)
+16     @PAYMENTDT     datetime datetime        ← NEW PARAMETER
+
+Total parameters: 16
+
+==========================================
+✓ UPDATE COMPLETE!
+==========================================
+
+Changes made:
+  • Added @PAYMENTDT DATETIME parameter
+  • Updated INSERT statement to include PAYMENTDT column
+  • Updated UPDATE statement to set PAYMENTDT column
+
+================================================================================
+RECOMMENDED WORKFLOW
+================================================================================
+
+First Time:
+-----------
+1. Run: Show_Current_SP_Only.sql
+   → See what's currently in database
+   → Check if update is needed
+
+2. If update needed:
+   Run: Get_Current_SP_And_Update.sql
+   → Gets current SP from database
+   → Updates it with PAYMENTDT parameter
+
+3. Restart backend server
+   → Ctrl+C in backend window
+   → dotnet run
+
+4. Test payment functionality
+   → Select payment date
+   → Save transaction
+   → Verify in database
+
+Subsequent Times:
+-----------------
+1. Run: Show_Current_SP_Only.sql
+   → Should show "✓ @PAYMENTDT parameter EXISTS"
+   → Should show "Status: Stored procedure is up to date!"
+
+================================================================================
+COMPARISON: Available Scripts
+================================================================================
+
+Show_Current_SP_Only.sql
+------------------------
+✓ Read-only (no changes)
+✓ Shows current state
+✓ Fast diagnostic
+✗ Doesn't fix anything
+
+Get_Current_SP_And_Update.sql
+------------------------------
+✓ Gets actual SP from database
+✓ Shows before and after
+✓ Updates the SP
+✓ Verifies changes
+
+Complete_SP_Diagnostic_And_Fix.sql
+-----------------------------------
+✓ All-in-one solution
+✓ Checks and fixes
+✓ Most comprehensive
+✓ Good for first-time setup
+
+QuickFix_AddPaymentDT_Parameter.sql
+------------------------------------
+✓ Fastest fix
+✓ Drops and recreates
+✗ Doesn't show before state
+
+================================================================================
+WHICH SCRIPT TO RUN?
+================================================================================
+
+Situation 1: Want to see what's in database first
+-------------------------------------------------
+Run: Show_Current_SP_Only.sql
+Then: Get_Current_SP_And_Update.sql (if update needed)
+
+Situation 2: Want to see before/after and update
+-------------------------------------------------
+Run: Get_Current_SP_And_Update.sql
+
+Situation 3: Just want it fixed quickly
+----------------------------------------
+Run: QuickFix_AddPaymentDT_Parameter.sql
+
+Situation 4: First time setup, check everything
+------------------------------------------------
+Run: Complete_SP_Diagnostic_And_Fix.sql
+
+================================================================================
+VERIFICATION AFTER UPDATE
+================================================================================
+
+Check stored procedure was updated:
+-----------------------------------
+SELECT
+    PARAMETER_NAME,
+    DATA_TYPE
+FROM INFORMATION_SCHEMA.PARAMETERS
+WHERE SPECIFIC_NAME = 'SP_AddUpdAllTransections'
+AND PARAMETER_NAME = '@PAYMENTDT'
+
+Expected result: 1 row showing @PAYMENTDT datetime
+
+Check table has column:
+-----------------------
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblAllTransections'
+AND COLUMN_NAME = 'PAYMENTDT'
+
+Expected result: 1 row showing PAYMENTDT datetime
+
+Test with actual transaction:
+-----------------------------
+-- After saving a payment in the app, run this:
+SELECT TOP 5
+    TRAID,
+    TRNSID,
+    PAMT,
+    TRNDT,
+    PAYMENTDT,  -- Should have a value!
+    MAID
+FROM tblAllTransections
+WHERE TRNSID = '20'
+ORDER BY TRNDT DESC
+
+Expected result: PAYMENTDT column has the date you selected
+
+================================================================================
+DATABASE CONNECTION
+================================================================================
+
+Server:   ADSVR\SQLEXPRESS01
+Database: InventoryManagement
+User:     sa
+Password: 123456
+
+Connection string:
+Server=ADSVR\SQLEXPRESS01;Database=InventoryManagement;User ID=sa;Password=123456;TrustServerCertificate=True;
+
+================================================================================

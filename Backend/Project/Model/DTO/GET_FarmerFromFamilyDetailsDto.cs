@@ -1,0 +1,16 @@
+﻿namespace Project.Model.DTO
+{
+    public class GET_FarmerFromFamilyDetailsDto
+    {
+        public string FDAID { get; set; }
+        public string MAID { get; set; }
+        public string FDNAME { get; set; }
+        public string FDBIRTHDATE { get; set; }
+        public string FDAADHARNO { get; set; }
+        public string FDCONTACT { get; set; }
+        public string FDRELATION { get; set; }
+        public Boolean ISDELETED { get; set; }
+        public string FAID { get; set; }
+        public string FNAME { get; set; }
+    }
+}

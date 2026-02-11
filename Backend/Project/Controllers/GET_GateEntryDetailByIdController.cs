@@ -1,0 +1,41 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Project.Model.Domain;
+using Project.Model.DTO;
+using Project.Repository;
+
+namespace Project.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class GET_GateEntryDetailByIdController : ControllerBase
+    {
+        private readonly IGET_GateEntryDetailByIdRepository repository;
+        private readonly IMapper mapper;
+
+        public GET_GateEntryDetailByIdController(IGET_GateEntryDetailByIdRepository repository, IMapper mapper)
+        {
+            this.repository = repository;
+            this.mapper = mapper;
+        }
+        [HttpPost]
+
+        public async Task<IActionResult> getall(GET_GateEntryDetailByIdDomain inupt)
+        {
+            try
+            {
+                var domain = await repository.getasync(inupt);
+                var dto = mapper.Map<List<GET_GateEntryDetailByIdDto>>(domain);
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                // log if needed
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        
+    }
+}

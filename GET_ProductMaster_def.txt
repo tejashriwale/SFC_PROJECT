@@ -1,0 +1,156 @@
+Text                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                                                                                                                                                                                                                             
+CREATE FUNCTION [dbo].[GET_ProductMaster]
+                                                                                                                                                                                                                    
+(	
+                                                                                                                                                                                                                                                           
+		@PAID				VARCHAR(24)		=	'%',
+                                                                                                                                                                                                                               
+		@KEYWORD			VARCHAR(MAX)	=	'%',
+                                                                                                                                                                                                                             
+		@COMPANYID			VARCHAR(24)		=	'',
+                                                                                                                                                                                                                            
+		@DEPTID				VARCHAR(24)		=	''
+                                                                                                                                                                                                                               
+
+                                                                                                                                                                                                                                                             
+)
+                                                                                                                                                                                                                                                            
+RETURNS TABLE 
+                                                                                                                                                                                                                                               
+AS
+                                                                                                                                                                                                                                                           
+RETURN 
+                                                                                                                                                                                                                                                      
+(
+                                                                                                                                                                                                                                                            
+		SELECT		COALESCE(PAID						,	'')		AS	PAID				
+                                                                                                                                                                                                              
+					,COALESCE(PCODE						,	'')		AS	PCODE				
+                                                                                                                                                                                                                
+					,COALESCE(PNAME						,	'')		AS	PNAME				
+                                                                                                                                                                                                                
+					,COALESCE(PTYPE						,	'')		AS	PTYPE				
+                                                                                                                                                                                                                
+					,COALESCE(PCATEGORY					,	'')		AS	PCATEGORY			
+                                                                                                                                                                                                          
+					,COALESCE(PSUBCATEGORY				,	'')		AS	PSUBCATEGORY		
+                                                                                                                                                                                                      
+					,COALESCE(PDESCRIPTION				,	'')		AS	PDESCRIPTION		
+                                                                                                                                                                                                      
+					,COALESCE(PSALES					,	'')		AS	PSALES			
+                                                                                                                                                                                                                
+					,COALESCE(PTYPESOFSALES				,	'')		AS	PTYPESOFSALES		
+                                                                                                                                                                                                    
+					,COALESCE(PPURCHASEUOM				,	'')		AS	PPURCHASEUOM		
+                                                                                                                                                                                                      
+					,COALESCE(PHSN						,	'')		AS	PHSN				
+                                                                                                                                                                                                                  
+					,COALESCE(PREORDERLEVEL				,	'')		AS	PREORDERLEVEL		
+                                                                                                                                                                                                    
+					,COALESCE(PFROMOFPRODUCT			,	'')		AS	PFROMOFPRODUCT	
+                                                                                                                                                                                                    
+					,COALESCE(PRETURNPOLICY				,	'')		AS	PRETURNPOLICY		
+                                                                                                                                                                                                    
+					,COALESCE(PPRODUCTUSE				,	'')		AS	PPRODUCTUSE		
+                                                                                                                                                                                                        
+					,COALESCE(PIMAGES					,	'')		AS	PIMAGES
+                                                                                                                                                                                                                 
+					,COALESCE(PIGST						,	'')		AS	PIGST
+                                                                                                                                                                                                                    
+					,COALESCE(PSGST						,	'')		AS	PSGST
+                                                                                                                                                                                                                    
+					,COALESCE(PCGST						,	'')		AS	PCGST
+                                                                                                                                                                                                                    
+					,COALESCE(PCESS						,	'')		AS	PCESS
+                                                                                                                                                                                                                    
+					,COALESCE(C.CTNAME					,	'')		AS	CTNAME
+                                                                                                                                                                                                                 
+					,COALESCE(CM.CTNAME					,	'')		AS	SCTNAME
+                                                                                                                                                                                                               
+	                ,COALESCE(PRODUCTID   	            ,	'')		AS  PRODUCTID   
+                                                                                                                                                                                  
+	                ,COALESCE(PRODUCTNAME	            ,	'')		AS  PRODUCTNAME	
+                                                                                                                                                                                   
+	                ,COALESCE(BRANDNAME  	            ,	'')	    AS  BRANDNAME  	
+                                                                                                                                                                                
+	                ,COALESCE(RETAILP    	            ,   '')		AS  RETAILP    	
+                                                                                                                                                                                 
+	                ,COALESCE(DEALERP    	            ,   '')		AS  DEALERP    	
+                                                                                                                                                                                 
+	                ,COALESCE(RATE    	                ,   '')		AS  RATE    	
+                                                                                                                                                                                   
+	                ,COALESCE(RANGE      		        ,   '')		AS  RANGE      	
+                                                                                                                                                                                    
+	                ,COALESCE(DISCOUNTTYPE   	        ,   '')		AS  DISCOUNTTYPE 
+                                                                                                                                                                                
+		        	,COALESCE(SUBCATEGORY               ,   '')		AS  SUBCATEGORY
+                                                                                                                                                                                      
+		        	,COALESCE(CATEGORY    				,   '')		AS  CATEGORY   
+                                                                                                                                                                                                
+		        	,COALESCE(SALETYPE    	  			,   '')		AS	SALETYPE   
+                                                                                                                                                                                               
+		        	,COALESCE(PRODUCTTYPE 	  		    ,   '')		AS  PRODUCTTYPE
+                                                                                                                                                                                           
+				    ,COALESCE(P.SYSDT 	  		        ,   '')		AS  SYSDT
+                                                                                                                                                                                                    
+
+                                                                                                                                                                                                                                                             
+		FROM tblProductMaster P
+                                                                                                                                                                                                                                    
+		LEFT JOIN tblCategoryMaster C ON C.ISDELETED  = 0 AND C.CTTYPE  = '1' AND C.CTID = P.PCATEGORY
+                                                                                                                                                             
+		LEFT JOIN tblCategoryMaster CM ON CM.ISDELETED= 0 AND CM.CTTYPE = '2' AND CM.CTSUBCATGORYID = P.PSUBCATEGORY
+                                                                                                                                               
+		WHERE		P.ISDELETED		= 0
+                                                                                                                                                                                                                                    
+			AND		P.COMPANYID		= @COMPANYID
+                                                                                                                                                                                                                            
+			AND		P.DEPTID		= @DEPTID		
+                                                                                                                                                                                                                                
+			AND		PAID	LIKE	  @PAID
+                                                                                                                                                                                                                                    
+			AND		(
+                                                                                                                                                                                                                                                    
+		
+                                                                                                                                                                                                                                                           
+								PNAME			LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                                    
+								OR PCATEGORY	LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                               
+								OR PSUBCATEGORY LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                            
+								OR PHSN			LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                                  
+								OR PRODUCTID    LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                            
+		
+                                                                                                                                                                                                                                                           
+		
+                                                                                                                                                                                                                                                           
+		
+                                                                                                                                                                                                                                                           
+					)
+                                                                                                                                                                                                                                                       
+			--SELECT * FROM GET_ProductMaster('%','%','COMP123456789','D001')ORDER BY SYSDT DESC;
+                                                                                                                                                                     
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+)
+                                                                                                                                                                                                                                                            
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+--select * from GET_ProductMaster('%','%','COMP123456789','D001')
+                                                                                                                                                                                            
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             

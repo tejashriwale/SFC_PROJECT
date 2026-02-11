@@ -1,0 +1,64 @@
+Text                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                                                                                                                                                                                                                             
+CREATE FUNCTION [dbo].[GET_PlotMaster]
+                                                                                                                                                                                                                       
+(	
+                                                                                                                                                                                                                                                           
+		@PLTAID			    VARCHAR(24)		=	'%',
+                                                                                                                                                                                                                          
+		@KEYWORD			VARCHAR(MAX)	=	'%',
+                                                                                                                                                                                                                             
+		@COMPANYID			VARCHAR(24)		=	'',
+                                                                                                                                                                                                                            
+		@DEPTID				VARCHAR(24)		=	''
+                                                                                                                                                                                                                               
+		
+                                                                                                                                                                                                                                                           
+)
+                                                                                                                                                                                                                                                            
+RETURNS TABLE 
+                                                                                                                                                                                                                                               
+AS
+                                                                                                                                                                                                                                                           
+RETURN 
+                                                                                                                                                                                                                                                      
+(
+                                                                                                                                                                                                                                                            
+	
+                                                                                                                                                                                                                                                            
+		SELECT	 COALESCE(PLTAID				                                  ,	'')		AS	PLTAID			
+                                                                                                                                                                           
+				,COALESCE( FARMERNAME					                          ,	'')		AS	FARMERNAME		
+                                                                                                                                                                               
+			    ,COALESCE(CONVERT(VARCHAR(16), REGDATE,	106)	         	     ,	'')	    AS	REGDATE				
+                                                                                                                                                                  
+				
+                                                                                                                                                                                                                                                         
+				
+                                                                                                                                                                                                                                                         
+		FROM	tblPlotMaster
+                                                                                                                                                                                                                                         
+		WHERE	ISDELETED	=	0
+                                                                                                                                                                                                                                        
+			AND	COMPANYID	=	@COMPANYID
+                                                                                                                                                                                                                                
+			AND	DEPTID		=	@DEPTID
+                                                                                                                                                                                                                                     
+			AND	PLTAID		LIKE	@PLTAID	
+                                                                                                                                                                                                                                 
+			AND		( 
+                                                                                                                                                                                                                                                   
+						FARMERNAME		LIKE	'%' + @KEYWORD + '%'
+                                                                                                                                                                                                                  
+						OR REGDATE			LIKE	'%' + @KEYWORD + '%'
+                                                                                                                                                                                                                 
+						
+                                                                                                                                                                                                                                                       
+				    )
+                                                                                                                                                                                                                                                    
+)
+                                                                                                                                                                                                                                                            
+--select * from GET_PlotMaster('%','%','','')order by REGDATE desc
+                                                                                                                                                                                           

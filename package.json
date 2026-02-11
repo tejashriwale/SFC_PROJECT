@@ -1,0 +1,29 @@
+{
+  "name": "sfc-fullstack",
+  "version": "1.0.0",
+  "description": "Full-stack application with React frontend and ASP.NET Core backend",
+  "scripts": {
+    "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "npm --prefix ./Frontend run dev",
+    "dev:backend": "dotnet run --project ./Backend/Project/Project.csproj",
+    "open:browsers": "start http://localhost:5200/swagger && timeout /t 2 /nobreak > nul && start http://localhost:5173",
+    "check": "netstat -ano | findstr \":5200 :5173\"",
+    "build:frontend": "npm --prefix ./Frontend run build",
+    "build:backend": "dotnet build ./Backend/Project/Project.csproj",
+    "build": "npm run build:frontend && npm run build:backend",
+    "install:frontend": "npm --prefix ./Frontend install",
+    "install:backend": "dotnet restore ./Backend/Project/Project.csproj",
+    "install:all": "npm run install:frontend && npm run install:backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "keywords": [
+    "react",
+    "vite",
+    "aspnet",
+    "fullstack"
+  ],
+  "author": "",
+  "license": "ISC"
+}

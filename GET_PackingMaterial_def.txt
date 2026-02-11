@@ -1,0 +1,66 @@
+Text                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                                                                                                                                                                                                                             
+CREATE FUNCTION [dbo].[GET_PackingMaterial]
+                                                                                                                                                                                                                  
+(	
+                                                                                                                                                                                                                                                           
+		@MAID				VARCHAR(24)		=	'',
+                                                                                                                                                                                                                                
+		@KEYWORD			VARCHAR(MAX)	=	'%',
+                                                                                                                                                                                                                             
+		@COMPANYID			VARCHAR(24)		=	'',
+                                                                                                                                                                                                                            
+		@DEPTID				VARCHAR(24)		=	''
+                                                                                                                                                                                                                               
+)
+                                                                                                                                                                                                                                                            
+RETURNS TABLE 
+                                                                                                                                                                                                                                               
+AS
+                                                                                                                                                                                                                                                           
+RETURN 
+                                                                                                                                                                                                                                                      
+(
+                                                                                                                                                                                                                                                            
+		SELECT		COALESCE(MAID					,	'')		AS	MAID				
+                                                                                                                                                                                                               
+					,COALESCE(MTYPE					,	'')		AS	MTYPE				
+                                                                                                                                                                                                                 
+					,COALESCE(UOM				    ,	'')		AS	UOM			
+                                                                                                                                                                                                                   
+					,COALESCE(MSIZE				    ,	'')		AS	MSIZE			
+                                                                                                                                                                                                               
+					,COALESCE(COUNT			        ,	'')		AS	COUNT		
+                                                                                                                                                                                                             
+				
+                                                                                                                                                                                                                                                         
+
+                                                                                                                                                                                                                                                             
+		FROM		tblPackingMaterial
+                                                                                                                                                                                                                                   
+		WHERE		ISDELETED = 0
+                                                                                                                                                                                                                                       
+			AND		COMPANYID	=	@COMPANYID
+                                                                                                                                                                                                                               
+			AND		DEPTID		=	@DEPTID		
+                                                                                                                                                                                                                                  
+			AND		MAID	LIKE	@MAID
+                                                                                                                                                                                                                                      
+			AND (	
+                                                                                                                                                                                                                                                    
+				   MTYPE		    LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                                  
+				OR UOM		        LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                                
+				OR MSIZE		    LIKE '%' + @KEYWORD + '%'
+                                                                                                                                                                                                                  
+				
+                                                                                                                                                                                                                                                         
+				
+                                                                                                                                                                                                                                                         
+		)
+                                                                                                                                                                                                                                                          
+)
+                                                                                                                                                                                                                                                            

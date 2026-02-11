@@ -1,0 +1,104 @@
+Text                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                                                                                                                                                                                                                             
+CREATE FUNCTION [dbo].[GET_VisitorMaster]
+                                                                                                                                                                                                                    
+(
+                                                                                                                                                                                                                                                            
+		@VAID				VARCHAR(24)		=	'%',
+                                                                                                                                                                                                                               
+		@KEYWORD			VARCHAR(50)		=	'%',
+                                                                                                                                                                                                                             
+		@COMPANYID			VARCHAR(24)		=	'',
+                                                                                                                                                                                                                            
+		@DEPTID				VARCHAR(24)		=	''
+                                                                                                                                                                                                                               
+)
+                                                                                                                                                                                                                                                            
+RETURNS TABLE 
+                                                                                                                                                                                                                                               
+AS
+                                                                                                                                                                                                                                                           
+RETURN 
+                                                                                                                                                                                                                                                      
+( 
+                                                                                                                                                                                                                                                           
+		SELECT		
+                                                                                                                                                                                                                                                   
+		
+                                                                                                                                                                                                                                                           
+					 COALESCE(VM.VAID						,	'')		AS	VAID			
+                                                                                                                                                                                                                
+					,COALESCE(VM.FAID						,	'')		AS	FARMERNAME	
+                                                                                                                                                                                                            
+					,COALESCE(CONVERT(VARCHAR(16), VM.VDATE, 106)	,   '')  	AS	VISITINGDATE
+                                                                                                                                                                                 
+					,COALESCE(VM.CONTACTNO					,	'')		AS	PHONENUMBER	
+                                                                                                                                                                                                       
+					,COALESCE(VM.LOCATION					,	'')		AS	LOCATION		
+                                                                                                                                                                                                          
+					,COALESCE(VM.UAID						,	'')		AS	UAID			
+                                                                                                                                                                                                                
+					,COALESCE(VM.COMPANYID					,	'')		AS	COMPANYID		
+                                                                                                                                                                                                        
+					,COALESCE(VM.DEPTID						,	'')		AS	DEPTID	
+                                                                                                                                                                                                              
+					,COALESCE(VM.ISCOMPLITED				,	'')		AS	ISCOMPLITED
+                                                                                                                                                                                                       
+					,COALESCE(F.FNAME					    ,	'')		AS	FNAME
+                                                                                                                                                                                                               
+					,COALESCE(VM.ADVAMT						,	0)		AS  ADVAMT
+                                                                                                                                                                                                               
+																																		
+                                                                                                                                                                                                                           
+		FROM  tblVisitorMaster  VM
+                                                                                                                                                                                                                                 
+
+                                                                                                                                                                                                                                                             
+		left join tblFarmer F  ON F.ISDELETED = 0 AND F.FAID = VM.FAID
+                                                                                                                                                                                             
+										
+                                                                                                                                                                                                                                                   
+		WHERE		VM.ISDELETED	=	0
+                                                                                                                                                                                                                                    
+			AND     VM.ISCOMPLITED  =   0
+                                                                                                                                                                                                                             
+			AND		VM.COMPANYID	=	@COMPANYID
+                                                                                                                                                                                                                            
+			AND		VM.DEPTID		=	@DEPTID	
+                                                                                                                                                                                                                                
+			AND		VM.VAID		    LIKE	      @VAID
+                                                                                                                                                                                                                        
+			AND	 ( 
+                                                                                                                                                                                                                                                   
+					FNAME		LIKE	'%' + @KEYWORD + '%'
+                                                                                                                                                                                                                        
+			OR		FCONTACTNO		LIKE	'%' + @KEYWORD + '%'
+                                                                                                                                                                                                                 
+							
+                                                                                                                                                                                                                                                      
+				 )
+                                                                                                                                                                                                                                                       
+	
+                                                                                                                                                                                                                                                            
+)
+                                                                                                                                                                                                                                                            
+
+                                                                                                                                                                                                                                                             
+--select * from GET_VisitorMaster('%','%','COMP123456789','D001')
+                                                                                                                                                                                            
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+ 
+                                                                                                                                                                                                                                                            
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             

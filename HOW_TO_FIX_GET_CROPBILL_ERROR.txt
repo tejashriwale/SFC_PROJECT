@@ -1,0 +1,324 @@
+================================================================================
+              FIX: GET_CropBill "varchar to numeric" ERROR
+                        QUICK SOLUTION GUIDE
+================================================================================
+
+ERROR MESSAGE:
+==============
+http://localhost:5173/backend/api/GET_CropBill
+Internal server error: Error converting data type varchar to numeric.
+
+ROOT CAUSE:
+===========
+The SQL function GET_CropBill is trying to return RATE as varchar, but the
+C# code expects it as a double/numeric value.
+
+This happened because:
+1. We moved RATE column from Master table to Detail table
+2. The GET_CropBill function still pulls RATE from Master table
+3. Or it's using a string aggregation function on RATE
+
+================================================================================
+SOLUTION - 3 STEPS
+================================================================================
+
+STEP 1: Run Diagnostic Script
+------------------------------
+File: D:\SFC\Backend\Database_Scripts\Fix_GET_CropBill_Function.sql
+
+This script will:
+✓ Find the GET_CropBill function
+✓ Show its current definition
+✓ Identify where RATE is coming from
+✓ Suggest the fix needed
+
+How to run:
+1. Open SQL Server Management Studio (SSMS)
+2. Connect to: ADSVR\SQLEXPRESS01 (sa/123456)
+3. Open: Fix_GET_CropBill_Function.sql
+4. Press F5
+
+The output will show you the function definition and tell you what to fix.
+
+
+STEP 2: Fix the Function
+-------------------------
+After running the diagnostic, you'll see the full function definition.
+
+The fix is to change how RATE is calculated. Here are the options:
+
+OPTION A: Weighted Average (RECOMMENDED)
+-----------------------------------------
+This calculates the average rate weighted by quantity/weight.
+
+Find the line that selects RATE in the function and replace it with:
+
+  CASE
+    WHEN SUM(d.WEIGHT) > 0 THEN
+      CAST(SUM(d.WEIGHT * d.RATE) / SUM(d.WEIGHT) AS DECIMAL(18,2))
+    ELSE CAST(0 AS DECIMAL(18,2))
+  END AS RATE
+
+And make sure the FROM clause includes the detail table:
+
+  FROM tblCropInvertDetail d  -- or tblCropDirectInvertDetail
+  WHERE d.CROPID = @CROPID
+  AND d.ISDELETED = 0
+
+
+OPTION B: Simple Average
+-------------------------
+This just averages all rates regardless of weight:
+
+  CAST(AVG(d.RATE) AS DECIMAL(18,2)) AS RATE
+
+
+OPTION C: First Row Rate
+-------------------------
+This takes the rate from the first detail row:
+
+  CAST((SELECT TOP 1 RATE FROM tblCropInvertDetail
+        WHERE CROPID = @CROPID AND ISDELETED = 0) AS DECIMAL(18,2)) AS RATE
+
+
+OPTION D: Return NULL (If RATE not needed)
+-------------------------------------------
+If the GET_CropBill view doesn't actually need RATE:
+
+  CAST(NULL AS DECIMAL(18,2)) AS RATE
+
+
+STEP 3: Apply the Fix
+----------------------
+1. Copy the full function definition from the diagnostic output
+2. Modify the RATE calculation using one of the options above
+3. Add "CREATE OR ALTER FUNCTION" at the top if not already there
+4. Execute the modified function in SSMS
+5. Restart backend server
+6. Test the API again
+
+
+================================================================================
+EXAMPLE FIX (Most Common Scenario)
+================================================================================
+
+If your GET_CropBill function looks like this (OLD):
+
+  SELECT
+    m.CROPID,
+    m.RATE,  ← Problem: pulls from master (wrong location)
+    m.WEIGHT,
+    m.AMOUNT
+  FROM tblCropInvertMaster m
+  WHERE m.CROPID = @CROPID
+
+
+Change it to this (NEW):
+
+  SELECT
+    m.CROPID,
+    CASE
+      WHEN SUM(d.WEIGHT) > 0 THEN
+        CAST(SUM(d.WEIGHT * d.RATE) / SUM(d.WEIGHT) AS DECIMAL(18,2))
+      ELSE CAST(0 AS DECIMAL(18,2))
+    END AS RATE,  ← Fixed: calculates from detail table
+    m.WEIGHT,
+    m.AMOUNT
+  FROM tblCropInvertMaster m
+  LEFT JOIN tblCropInvertDetail d ON m.CROPID = d.CROPID AND d.ISDELETED = 0
+  WHERE m.CROPID = @CROPID
+  GROUP BY m.CROPID, m.WEIGHT, m.AMOUNT
+
+
+================================================================================
+COMPLETE EXAMPLE FUNCTION
+================================================================================
+
+Here's a complete example of what the fixed function might look like:
+
+CREATE OR ALTER FUNCTION [dbo].[GET_CropBill]
+(
+    @CROPID VARCHAR(50),
+    @COMPANYID VARCHAR(50),
+    @DEPTID VARCHAR(50)
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        m.CROPID,
+        m.CBKID,
+        m.VISITINGDATE,
+        m.NARR,
+        m.PHONENUMBER,
+        m.CTYPE,
+        m.CVARIETY,
+        m.CAREA,
+        m.FARMERNAME,
+        m.CROPNAME,
+        m.FAID,
+
+        -- RATE calculated from detail table (FIXED)
+        CASE
+            WHEN SUM(d.WEIGHT) > 0 THEN
+                CAST(SUM(d.WEIGHT * d.RATE) / SUM(d.WEIGHT) AS DECIMAL(18,2))
+            ELSE CAST(0 AS DECIMAL(18,2))
+        END AS RATE,
+
+        m.WEIGHT,
+        m.CARET,
+        m.AMOUNT,
+        m.ADVANCE,
+        m.CDAID,
+        m.VDAID,
+        m.BILLSTATUS
+    FROM tblCropInvertMaster m
+    LEFT JOIN tblCropInvertDetail d ON m.CROPID = d.CROPID AND d.ISDELETED = 0
+    WHERE m.CROPID = @CROPID
+      AND m.COMPANYID = @COMPANYID
+      AND m.DEPTID = @DEPTID
+      AND m.ISDELETED = 0
+    GROUP BY
+        m.CROPID, m.CBKID, m.VISITINGDATE, m.NARR, m.PHONENUMBER,
+        m.CTYPE, m.CVARIETY, m.CAREA, m.FARMERNAME, m.CROPNAME,
+        m.FAID, m.WEIGHT, m.CARET, m.AMOUNT, m.ADVANCE,
+        m.CDAID, m.VDAID, m.BILLSTATUS
+)
+GO
+
+
+================================================================================
+QUICK FIX CHECKLIST
+================================================================================
+
+[ ] Run Fix_GET_CropBill_Function.sql in SSMS
+[ ] Copy the function definition from output
+[ ] Find the line that selects RATE
+[ ] Replace with weighted average calculation (Option A above)
+[ ] Add JOIN to detail table if not already there
+[ ] Add GROUP BY clause if using aggregation
+[ ] Execute the modified function (CREATE OR ALTER FUNCTION)
+[ ] Check for any errors
+[ ] Restart backend server (Ctrl+C, dotnet run)
+[ ] Test http://localhost:5173/... in browser
+[ ] Error should be gone!
+
+
+================================================================================
+VERIFICATION
+================================================================================
+
+After applying the fix, verify it works:
+
+1. Test the function directly in SSMS:
+   ------------------------------------
+   SELECT * FROM GET_CropBill('your-cropid-here', '', '')
+
+   Should return results with RATE as a decimal number.
+
+2. Test the API endpoint:
+   ----------------------
+   http://localhost:5173/backend/api/GET_CropBill
+
+   Should work without "varchar to numeric" error.
+
+3. Check the RATE value:
+   ---------------------
+   The RATE should be the weighted average of all detail rows.
+
+   Example:
+   - Detail row 1: 100kg at 50 Rs/kg
+   - Detail row 2: 200kg at 30 Rs/kg
+   - Weighted avg: (100×50 + 200×30) / (100+200) = 11000/300 = 36.67 Rs/kg
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Error: "Function GET_CropBill not found"
+----------------------------------------
+The function might have a different name. Run:
+
+  SELECT name FROM sys.objects
+  WHERE type IN ('FN', 'IF', 'TF')
+  AND name LIKE '%CropBill%'
+
+
+Error: "Invalid object name 'tblCropInvertDetail'"
+--------------------------------------------------
+Your database uses tblCropDirectInvertDetail instead.
+Change the JOIN to use that table name.
+
+
+Error: "Column 'RATE' is invalid in the select list"
+----------------------------------------------------
+When using aggregate functions (SUM, AVG), you need GROUP BY.
+Add all non-aggregated columns to GROUP BY clause.
+
+
+Still getting varchar error:
+-----------------------------
+1. Check master table RATE column type:
+   SELECT DATA_TYPE
+   FROM INFORMATION_SCHEMA.COLUMNS
+   WHERE TABLE_NAME = 'tblCropInvertMaster'
+   AND COLUMN_NAME = 'RATE'
+
+   If it's varchar, you need to also add CAST in the function.
+
+2. Make sure detail table RATE is DECIMAL:
+   Run Add_Rate_To_CropInvertDetail.sql if not done yet
+
+
+Function updated but still erroring:
+------------------------------------
+1. Make sure you restarted the backend server
+2. Clear browser cache (Ctrl+Shift+Delete)
+3. Check backend console for SQL error details
+
+
+================================================================================
+ALTERNATIVE: Quick Temporary Fix
+================================================================================
+
+If you need a quick fix and RATE isn't critical in this view:
+
+Change the C# code to handle NULL:
+
+File: D:\SFC\Backend\Project\Repository\SqlGET_CropBillRepository.cs
+Line 38:
+
+Change from:
+  RATE = reader.GetDouble("RATE"),
+
+To:
+  RATE = reader.IsDBNull("RATE") ? 0 : reader.GetDouble("RATE"),
+
+This makes RATE default to 0 if NULL, avoiding the conversion error.
+
+But the proper fix is updating the SQL function.
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+Problem:  GET_CropBill function returns RATE as varchar
+Solution: Update function to calculate RATE from detail table with CAST
+
+Steps:
+1. Run diagnostic: Fix_GET_CropBill_Function.sql
+2. Copy function definition from output
+3. Update RATE calculation to use weighted average from detail table
+4. Execute modified function in SSMS
+5. Restart backend
+6. Test API
+
+Expected Result: API works without errors, RATE shows weighted average
+
+Need Help?: The diagnostic script shows your exact function definition
+                and tells you exactly what to change.
+
+================================================================================

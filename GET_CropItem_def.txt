@@ -1,0 +1,88 @@
+Text                                                                                                                                                                                                                                                           
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+                                                                                                                                                                                                                                                             
+CREATE FUNCTION [dbo].[GET_CropItem]
+                                                                                                                                                                                                                         
+(	
+                                                                                                                                                                                                                                                           
+		@ITEMAID   			VARCHAR(24)		=	'%',
+                                                                                                                                                                                                                          
+		@KEYWORD			VARCHAR(MAX)	=	'%',
+                                                                                                                                                                                                                             
+		@COMPANYID			VARCHAR(24)		=	'',
+                                                                                                                                                                                                                            
+		@DEPTID				VARCHAR(24)		=	''
+                                                                                                                                                                                                                               
+
+                                                                                                                                                                                                                                                             
+		
+                                                                                                                                                                                                                                                           
+)
+                                                                                                                                                                                                                                                            
+RETURNS TABLE 
+                                                                                                                                                                                                                                               
+AS
+                                                                                                                                                                                                                                                           
+RETURN 
+                                                                                                                                                                                                                                                      
+(
+                                                                                                                                                                                                                                                            
+	
+                                                                                                                                                                                                                                                            
+		SELECT  COALESCE(ITEMAID  				,	'')		AS			ITEMAID	
+                                                                                                                                                                                                         
+		       , COALESCE(ITEMPHOTO   			,	'')		AS		ITEMPHOTO 
+                                                                                                                                                                                                     
+			   ,COALESCE(ITEMID 			    ,	'')	    AS			ITEMID
+                                                                                                                                                                                                          
+			   ,COALESCE(ITEMNM   	 	        ,   '')		AS			ITEMNM
+                                                                                                                                                                                                     
+			   ,COALESCE(ITEMNE   			    ,   '')		AS			ITEMNE
+                                                                                                                                                                                                         
+			   ,COALESCE(EXCharge   			,   '')		AS			EXCharge
+                                                                                                                                                                                                         
+			   ,COALESCE(STATUS					,   '')		AS			STATUS
+                                                                                                                                                                                                              
+			  
+                                                                                                                                                                                                                                                        
+	   FROM	tblITEM SA
+                                                                                                                                                                                                                                          
+		 
+                                                                                                                                                                                                                                                          
+	  
+                                                                                                                                                                                                                                                          
+		WHERE	SA.ISDELETED	=	0
+                                                                                                                                                                                                                                     
+			AND	SA.COMPANYID	=	@COMPANYID
+                                                                                                                                                                                                                             
+			AND	SA.DEPTID		=	@DEPTID
+                                                                                                                                                                                                                                  
+			AND	ITEMAID  	LIKE	@ITEMAID  
+                                                                                                                                                                                                                             
+				AND	(
+                                                                                                                                                                                                                                                    
+								ITEMID				        LIKE    '%'		+   @KEYWORD	+	'%'
+                                                                                                                                                                                                    
+						    OR  ITEMNM      				LIKE	'%'		+	@KEYWORD	+	'%'				
+                                                                                                                                                                                                 
+						    OR  ITEMNE      				LIKE	'%'		+	@KEYWORD	+	'%'				
+                                                                                                                                                                                                 
+							
+                                                                                                                                                                                                                                                      
+							
+                                                                                                                                                                                                                                                      
+							
+                                                                                                                                                                                                                                                      
+			
+                                                                                                                                                                                                                                                          
+				)
+                                                                                                                                                                                                                                                        
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+
+                                                                                                                                                                                                                                                             
+)
+                                                                                                                                                                                                                                                            

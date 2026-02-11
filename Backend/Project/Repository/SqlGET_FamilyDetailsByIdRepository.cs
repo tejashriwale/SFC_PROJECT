@@ -1,0 +1,44 @@
+﻿using System.Data;
+using Microsoft.EntityFrameworkCore;
+using Project.Data;
+using Project.Model.Domain;
+
+namespace Project.Repository
+{
+    public class SqlGET_FamilyDetailsByIdRepository : IGET_FamilyDetailsByIdRepository
+    {
+        private readonly ApplicationDbContext dbContext;
+        public SqlGET_FamilyDetailsByIdRepository(ApplicationDbContext dbContext)
+        {
+            this.dbContext = dbContext;
+        }
+        public async Task<List<GET_FamilyDetailsById>> getasync(GET_FamilyDetailsByIdDomain input)
+        {
+            List<GET_FamilyDetailsById> list = new List<GET_FamilyDetailsById>();
+            using(var command = dbContext.Database.GetDbConnection().CreateCommand())
+            {
+                command.CommandText = "SELECT * FROM [GET_FamilyDetailsById]('" + input.MAID + "' , '" + input.COMPANYID + "' , '" + input.DEPTID + "')";
+                dbContext.Database.OpenConnection();
+
+                using(var reader = await command.ExecuteReaderAsync())
+                {
+                    while(await reader.ReadAsync())
+                    {
+                        list.Add(new GET_FamilyDetailsById
+                        {
+                            FDAID = reader.GetString("FDAID"),
+                            MAID = reader.GetString("MAID"),
+                            FDNAME = reader.GetString("FDNAME"),
+                            FDBIRTHDATE = reader.GetString("FDBIRTHDATE"),
+                            FDCONTACT = reader.GetString("FDCONTACT"),
+                            FDAADHARNO = reader.GetString("FDAADHARNO"),
+                            FDRELATION = reader.GetString("FDRELATION"),
+                            ISDELETED = reader.GetBoolean("ISDELETED"),
+                        });
+                    }
+                }
+            }
+            return list;
+        }
+    }
+}

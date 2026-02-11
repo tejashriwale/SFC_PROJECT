@@ -1,0 +1,13 @@
+﻿namespace Project.Model.Domain
+{
+    public class GET_VyapariDueBharanaData
+    {
+        public string VPAID { get; set; }
+        public double BPAMT { get; set; }
+        public string TRNDT { get; set; }
+        public string FDUEDT { get; set; }
+        public double VAPASI { get; set; }
+        public double VAMT { get; set; }
+       
+    }
+}

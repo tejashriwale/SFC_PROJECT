@@ -1,0 +1,11 @@
+﻿namespace Project.Model.DTO
+{
+    public class _SP_AddImplicationTitle_DTO
+    {
+        public string ImplicationAutoID { get; set; }
+        public string ImplicationTitle { get; set; }
+        public string ImplicationValue { get; set; }
+        public string ImplicationGroup { get; set; }
+        public int ImplicationOrder { get; set; }
+    }
+}

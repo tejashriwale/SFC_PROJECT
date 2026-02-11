@@ -1,0 +1,41 @@
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Project.Model.Domain;
+using Project.Model.DTO;
+using Project.Repository;
+
+namespace Project.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class SP_DeletePRequisitionController : ControllerBase
+    {
+        private readonly ISP_DeletePRequisitionRepository repository;
+        private readonly IMapper mapper;
+
+        public SP_DeletePRequisitionController(ISP_DeletePRequisitionRepository repository, IMapper mapper)
+        {
+            this.repository = repository;
+            this.mapper = mapper;
+        }
+        [HttpPost]
+
+        public async Task<IActionResult> getasync(SP_DeletePRequisitionDomain input)
+        {
+            try
+            {
+                var domain = await repository.getasync(input);
+
+                var dto = mapper.Map<List<ApiResponseMessageDto>>(domain);
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+    }
+}

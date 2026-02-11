@@ -1,0 +1,296 @@
+================================================================================
+                    HOW TO RUN DATABASE SCRIPT
+                    STEP-BY-STEP INSTRUCTIONS
+================================================================================
+
+Follow these EXACT steps to fix the stored procedure in your database.
+
+================================================================================
+METHOD 1: EASIEST - Double-Click Auto Fix (RECOMMENDED)
+================================================================================
+
+Step 1: Navigate to folder
+---------------------------
+   Open File Explorer
+   Go to: D:\SFC\Backend\Database_Scripts\
+
+Step 2: Run the auto-fix
+-------------------------
+   Option A (Batch File):
+   ----------------------
+   1. Find: Auto_Fix_SP.bat
+   2. Double-click it
+   3. Wait for "UPDATE COMPLETE!"
+   4. Done!
+
+   Option B (PowerShell):
+   ---------------------
+   1. Find: Auto_Fix_SP.ps1
+   2. Right-click it
+   3. Select "Run with PowerShell"
+   4. Wait for "UPDATE COMPLETE!"
+   5. Done!
+
+Step 3: Restart backend
+----------------------
+   Go to your backend CMD window
+   Press: Ctrl+C
+   Type: Y
+   Run: dotnet run
+
+FINISHED! Test payment dates now.
+
+================================================================================
+METHOD 2: Using SQL Server Management Studio (SSMS)
+================================================================================
+
+Step 1: Open SSMS
+-----------------
+   1. Click Start menu
+   2. Search for "SQL Server Management Studio"
+   3. Click to open
+
+Step 2: Connect to database
+---------------------------
+   In the Connect dialog:
+
+   Server type:       Database Engine
+   Server name:       ADSVR\SQLEXPRESS01
+   Authentication:    SQL Server Authentication
+   Login:             sa
+   Password:          123456
+
+   Click: [Connect]
+
+Step 3: Open the SQL script
+---------------------------
+   1. Click menu: File → Open → File
+   2. Navigate to: D:\SFC\Backend\Database_Scripts\
+   3. Select: Get_Current_SP_And_Update.sql
+   4. Click: [Open]
+
+Step 4: Run the script
+----------------------
+   1. Make sure you're connected to InventoryManagement database
+      (Check dropdown at top of window)
+
+   2. Press F5 key
+      OR
+      Click the [Execute] button (green play icon)
+      OR
+      Click menu: Query → Execute
+
+Step 5: Check results
+---------------------
+   Look at the Messages tab (bottom of screen)
+
+   You should see:
+   ✓ Existing procedure dropped
+   ✓ Stored procedure created/updated successfully
+   ✓ UPDATE COMPLETE!
+
+Step 6: Restart backend
+----------------------
+   Go to your backend CMD window
+   Press: Ctrl+C
+   Type: Y
+   Run: dotnet run
+
+FINISHED! Test payment dates now.
+
+================================================================================
+METHOD 3: Using Command Line (sqlcmd)
+================================================================================
+
+Step 1: Open Command Prompt
+---------------------------
+   1. Press: Windows key + R
+   2. Type: cmd
+   3. Press: Enter
+
+Step 2: Navigate to scripts folder
+----------------------------------
+   Type:
+   cd D:\SFC\Backend\Database_Scripts
+
+   Press: Enter
+
+Step 3: Run the script
+----------------------
+   Copy and paste this EXACT command:
+
+   sqlcmd -S ADSVR\SQLEXPRESS01 -U sa -P 123456 -d InventoryManagement -i "Get_Current_SP_And_Update.sql"
+
+   Press: Enter
+
+Step 4: Check output
+--------------------
+   You should see:
+   ✓ UPDATE COMPLETE!
+
+Step 5: Restart backend
+----------------------
+   Go to your backend CMD window
+   Press: Ctrl+C
+   Type: Y
+   Run: dotnet run
+
+FINISHED! Test payment dates now.
+
+================================================================================
+VERIFICATION: Check if it worked
+================================================================================
+
+After running any method above, verify the fix worked:
+
+Step 1: Open SSMS and connect (if not already)
+----------------------------------------------
+   Server: ADSVR\SQLEXPRESS01
+   Login:  sa
+   Pass:   123456
+
+Step 2: Run this verification query
+-----------------------------------
+   Click: New Query
+   Copy and paste:
+
+   SELECT
+       PARAMETER_NAME,
+       DATA_TYPE
+   FROM INFORMATION_SCHEMA.PARAMETERS
+   WHERE SPECIFIC_NAME = 'SP_AddUpdAllTransections'
+   AND PARAMETER_NAME = '@PAYMENTDT'
+
+   Press: F5
+
+Step 3: Check results
+--------------------
+   You should see 1 row:
+   PARAMETER_NAME   DATA_TYPE
+   @PAYMENTDT       datetime
+
+   ✓ If you see this = SUCCESS!
+   ✗ If you see 0 rows = Script didn't run correctly, try again
+
+Step 4: Test in application
+---------------------------
+   1. Make sure backend is running
+   2. Open frontend: http://localhost:5173
+   3. Go to Farmer Bill Details
+   4. Select farmer and crop
+   5. Select payment date
+   6. Enter amount
+   7. Click Save
+   8. Should work without errors!
+
+Step 5: Verify data was saved
+-----------------------------
+   In SSMS, run this query:
+
+   SELECT TOP 5
+       TRAID,
+       PAMT,
+       TRNDT AS [Transaction Date],
+       PAYMENTDT AS [Payment Date],
+       MAID
+   FROM tblAllTransections
+   WHERE TRNSID = '20'
+   ORDER BY TRNDT DESC
+
+   Check: PAYMENTDT column should have the date you selected
+   ✓ If it has a date = WORKING PERFECTLY!
+
+================================================================================
+COMMON ERRORS AND SOLUTIONS
+================================================================================
+
+Error: "Cannot open database"
+-----------------------------
+Solution:
+   - Make sure SQL Server is running
+   - Check server name: ADSVR\SQLEXPRESS01
+   - Verify database exists: InventoryManagement
+
+Error: "Login failed for user 'sa'"
+----------------------------------
+Solution:
+   - Check password: 123456
+   - Verify SQL Server Authentication is enabled
+   - Try logging in with SSMS first to test credentials
+
+Error: "sqlcmd is not recognized"
+--------------------------------
+Solution:
+   Use METHOD 1 or METHOD 2 instead
+   (sqlcmd is not installed on your system)
+
+Error: "Procedure has too many arguments" (in backend)
+-----------------------------------------------------
+Solution:
+   The script hasn't run yet!
+   Go back and run it using METHOD 1 or METHOD 2
+
+Error: "Invalid column name 'PAYMENTDT'"
+---------------------------------------
+Solution:
+   The table doesn't have the column yet.
+   Run this script first in SSMS:
+
+   D:\SFC\Backend\Database_Scripts\Add_PaymentDate_Column.sql
+
+   Then run the SP update script again.
+
+================================================================================
+QUICK CHECKLIST
+================================================================================
+
+Before running:
+--------------
+[ ] SQL Server is running
+[ ] You have the correct server name: ADSVR\SQLEXPRESS01
+[ ] You have the correct password: 123456
+[ ] Backend server is stopped (we'll restart it after)
+
+After running:
+-------------
+[ ] Saw "UPDATE COMPLETE!" message
+[ ] Restarted backend server
+[ ] No errors in backend window
+[ ] Payment date saves successfully
+[ ] PAYMENTDT shows in database
+
+================================================================================
+RECOMMENDED METHOD FOR YOU
+================================================================================
+
+Based on your setup, here's what I recommend:
+
+1. Try METHOD 1 first (Double-click Auto_Fix_SP.bat)
+   ↓
+2. If that doesn't work, use METHOD 2 (SSMS)
+   ↓
+3. If you get column error, run Add_PaymentDate_Column.sql first
+
+The absolute EASIEST way:
+========================
+1. Go to: D:\SFC\Backend\Database_Scripts\
+2. Double-click: Auto_Fix_SP.bat
+3. Wait for success message
+4. Restart backend
+5. Done!
+
+================================================================================
+NEED HELP?
+================================================================================
+
+If you're still having issues:
+
+1. Take a screenshot of the error
+2. Note which METHOD you tried
+3. Check the error messages in this file
+4. Try the alternative method
+
+The scripts are designed to be safe - they check before making changes.
+You can run them multiple times without issues.
+
+================================================================================

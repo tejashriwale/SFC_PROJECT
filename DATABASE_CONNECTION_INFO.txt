@@ -1,0 +1,222 @@
+================================================================================
+                    DATABASE CONNECTION INFORMATION
+================================================================================
+
+Connection String from appsettings.json:
+---------------------------------------
+Server:   ADSVR\SQLEXPRESS01
+Database: InventoryManagement
+User ID:  sa
+Password: 123456
+TrustServerCertificate: True
+
+Full Connection String:
+Server=ADSVR\SQLEXPRESS01;Database=InventoryManagement;User ID=sa;Password=123456;TrustServerCertificate=True;
+
+================================================================================
+HOW TO CONNECT USING SQL SERVER MANAGEMENT STUDIO (SSMS)
+================================================================================
+
+Step 1: Open SSMS
+-----------------
+   - Launch SQL Server Management Studio
+
+Step 2: Enter Connection Details
+---------------------------------
+   Server type:       Database Engine
+   Server name:       ADSVR\SQLEXPRESS01
+   Authentication:    SQL Server Authentication
+   Login:             sa
+   Password:          123456
+
+Step 3: Click "Connect"
+-----------------------
+
+================================================================================
+HOW TO RUN THE DIAGNOSTIC AND FIX SCRIPT
+================================================================================
+
+Method 1: Using SSMS (Recommended)
+-----------------------------------
+   1. Connect to database using info above
+   2. Click "New Query"
+   3. Open file: D:\SFC\Backend\Database_Scripts\Complete_SP_Diagnostic_And_Fix.sql
+   4. Press F5 or click "Execute"
+
+Method 2: Using Command Line
+-----------------------------
+   sqlcmd -S ADSVR\SQLEXPRESS01 -U sa -P 123456 -d InventoryManagement -i "D:\SFC\Backend\Database_Scripts\Complete_SP_Diagnostic_And_Fix.sql"
+
+================================================================================
+WHAT THE DIAGNOSTIC SCRIPT DOES
+================================================================================
+
+Step 1: Checks if SP_AddUpdAllTransections exists
+   ✓ If exists: Shows current parameters
+   ✗ If missing: Creates new procedure
+
+Step 2: Checks for @PAYMENTDT parameter
+   ✓ If exists: Shows confirmation, no update needed
+   ✗ If missing: Drops and recreates with PAYMENTDT
+
+Step 3: Creates/Updates stored procedure with all 16 parameters
+   Including the new @PAYMENTDT parameter
+
+Step 4: Verifies the update
+   Shows final parameter list with "NEW!" marker
+
+Step 5: Checks tblAllTransections table
+   Verifies PAYMENTDT column exists
+
+================================================================================
+EXPECTED OUTPUT WHEN RUNNING SCRIPT
+================================================================================
+
+If everything is working:
+------------------------
+✓ Stored procedure EXISTS
+✓ @PAYMENTDT parameter ALREADY EXISTS
+No update needed! Stored procedure is already correct.
+
+If update is needed:
+-------------------
+✓ Stored procedure EXISTS
+✗ @PAYMENTDT parameter MISSING
+Updating stored procedure...
+Old procedure dropped.
+
+✓ STORED PROCEDURE UPDATED SUCCESSFULLY
+
+Verification:
+#   Parameter       Type      Status
+1   @TRAID          varchar
+2   @TRNSR          int
+3   @TRNSID         varchar
+4   @TRNTID         varchar
+5   @TRNDT          datetime
+6   @REFAID         varchar
+7   @MAID           varchar
+8   @PAMT           float
+9   @CBAL           float
+10  @ADVAMT         float
+11  @ASID           varchar
+12  @ISDELETED      bit
+13  @COMPANYID      varchar
+14  @DEPTID         varchar
+15  @CROPID         varchar
+16  @PAYMENTDT      datetime  ← NEW!
+
+Total Parameters: 16
+
+✓ PAYMENTDT column exists in tblAllTransections table
+
+SETUP COMPLETE!
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Error: "Cannot open database"
+Solution:
+   - Verify SQL Server is running
+   - Check server name is correct: ADSVR\SQLEXPRESS01
+   - Ensure InventoryManagement database exists
+
+Error: "Login failed for user 'sa'"
+Solution:
+   - Verify password is correct: 123456
+   - Check SQL Server Authentication is enabled
+   - Ensure 'sa' account is not disabled
+
+Error: "Invalid column name 'PAYMENTDT'"
+Solution:
+   - Run: Add_PaymentDate_Column.sql first
+   - Then run: Complete_SP_Diagnostic_And_Fix.sql
+
+================================================================================
+VERIFICATION QUERIES
+================================================================================
+
+Check if PAYMENTDT column exists:
+---------------------------------
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'tblAllTransections'
+AND COLUMN_NAME = 'PAYMENTDT'
+
+Check stored procedure parameters:
+-----------------------------------
+SELECT
+    PARAMETER_NAME,
+    DATA_TYPE,
+    PARAMETER_MODE
+FROM INFORMATION_SCHEMA.PARAMETERS
+WHERE SPECIFIC_NAME = 'SP_AddUpdAllTransections'
+ORDER BY ORDINAL_POSITION
+
+Check recent transactions with payment dates:
+--------------------------------------------
+SELECT TOP 10
+    TRAID,
+    TRNSID,
+    PAMT,
+    TRNDT AS [Transaction Date],
+    PAYMENTDT AS [Payment Date],
+    MAID
+FROM tblAllTransections
+WHERE TRNSID = '20'  -- Payment transactions
+ORDER BY TRNDT DESC
+
+================================================================================
+FILES TO RUN IN ORDER
+================================================================================
+
+If starting fresh:
+-----------------
+1. Add_PaymentDate_Column.sql
+   → Adds PAYMENTDT column to tblAllTransections table
+
+2. Complete_SP_Diagnostic_And_Fix.sql
+   → Updates stored procedure to accept PAYMENTDT parameter
+
+If column already exists:
+-------------------------
+1. Complete_SP_Diagnostic_And_Fix.sql
+   → This checks everything and fixes what's needed
+
+================================================================================
+AFTER RUNNING THE SCRIPT
+================================================================================
+
+1. Restart Backend Server
+   - Go to backend CMD window
+   - Press Ctrl+C
+   - Run: dotnet run
+
+2. Test in Frontend
+   - Select a farmer and crop
+   - Enter payment amount
+   - Select payment date from date picker
+   - Click Save
+
+3. Verify in Database
+   - Check tblAllTransections table
+   - PAYMENTDT column should have the selected date
+   - Not NULL for payment records (TRNSID = '20')
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+Database Server:  ADSVR\SQLEXPRESS01
+Database Name:    InventoryManagement
+Table:            tblAllTransections
+Column:           PAYMENTDT (DATETIME, NULL)
+Stored Proc:      SP_AddUpdAllTransections
+Parameter:        @PAYMENTDT DATETIME = NULL
+
+Script Location:  D:\SFC\Backend\Database_Scripts\Complete_SP_Diagnostic_And_Fix.sql
+
+================================================================================
+For more help, contact the development team.
+================================================================================
