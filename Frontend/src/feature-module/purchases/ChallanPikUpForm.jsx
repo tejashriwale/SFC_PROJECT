@@ -1,0 +1,1193 @@
+import React, { useRef, useEffect, useState } from "react";
+import { ArrowLeft } from "feather-icons-react/build/IconComponents";
+import withReactContent from "sweetalert2-react-content";
+import Swal from "sweetalert2";
+import { Link } from "react-router-dom";
+import axios from 'axios';
+
+import { ACSPLGUID, baseUrl, convertToISODate } from "../../core/json/custom";
+import Select from "react-select";
+import { getUserData } from "../../Context/UserData";
+function ChallanPikUpForm({ PCAIDD, poaid, vendorid, POTRANNO, onRefresh }) {
+    const { userdetail } = getUserData();
+
+    console.log("primarykey", PCAIDD, poaid, vendorid, POTRANNO);
+    console.log("primary key vendorid", vendorid)
+
+    useEffect(() => {
+        console.log("find vendorid");
+    }, [vendorid]);
+
+    const GUID = ACSPLGUID.getNew()
+    const PCTRNNORef = useRef(null);
+    const PCDATERef = useRef(null);
+    const PCVNORef = useRef(null);
+    const PCPOSUPPLYRef = useRef(null);
+    const PCVENDORRef = useRef(null);
+    const PCCONSIGNERRef = useRef(null);
+    const PCNARRATIONRef = useRef(null);
+    const REQNNOref = useRef(null);
+    const [states, setstates] = useState([]);
+    const [REQNNO, setREQNNO] = useState()
+    const [showForm, setShowForm] = useState(false);
+    const [paymentmode, setpaymentmode] = useState([]);
+    const [formData, setFormData] = useState({
+        PCTRNNO: '',
+        PORDERNO: '',
+        PCDATE: '',
+        PCVNO: '',
+        PCPOSUPPLY: '',
+        PCVENDOR: '',
+        PCCONSIGNER: '',
+        PCNARRATION: '',
+        PCNATE: 0,
+        PCGATE: 0,
+        PVENDORNAME: '',
+        PCVEMAIL: '',
+        PCVCONTACT: '',
+        POREFF: '',
+        PMODE: '',
+        PCPOSUPPLYLABLE: '',
+        VENDORSTATE: ''
+    });
+
+    const [rows, setRows] = useState([]);
+
+
+
+    const MySwal = withReactContent(Swal);
+
+
+    useEffect(() => {
+        if (poaid || vendorid) {
+            setShowForm(true);
+        }
+    }, [poaid, vendorid]);
+
+
+    useEffect(() => {
+        if (PCAIDD) {
+            setShowForm(true);
+            const fetchMasterData = async () => {
+                try {
+                    const payload = {
+                        pcaid: PCAIDD,
+                        keyword: "%",
+                        companyid: userdetail?.companyID || "",
+                        deptid: userdetail?.departmentID || "",
+                        statusid: "2",
+                    };
+                    const headers = {
+                        "Content-Type": "application/json",
+                        Accept: "*/*",
+                    };
+                    const response = await axios.post(
+                        `${baseUrl.Url}/backend/api/GET_PChallanMaster`,
+                        payload,
+                        { headers }
+                    );
+                    if (response.status !== 200)
+                        throw new Error("Failed to fetch vendor data");
+                    console.log("venderos", response.data)
+
+                    const Data = response.data[0];
+                    setFormData({
+                        PCTRNNO: Data.pctrnno,
+                        PCDATE: convertToISODate(Data.pcdate),
+                        PCVNO: Data.pcvno,
+                        PCPOSUPPLY: states.find((state) => state.value == Data.pcposupply)?.value || "",
+                        PCVENDOR: Data.pcseller,
+                        PVENDORNAME: Data.vendorname,
+                        PCCONSIGNER: Data.pcconsigner,
+                        PCNARRATION: Data.pcnarration,
+                        PCNATE: Data.pcnamt,
+                        PCGATE: Data.pcgamt,
+                        PCVCONTACT: Data.vendorcontact,
+                        PCVEMAIL: Data.vendoremail,
+                        POREFF: Data.poreff,
+                        PMODE: Data.paymentmode,
+                    });
+                    setREQNNO(response.data[0].pono)
+                } catch (error) {
+                    console.error("Error fetching vendor data:", error);
+                }
+            };
+            const fetchDetailData = async () => {
+                try {
+                    const payload = {
+                        pcaid: PCAIDD,
+                        companyid: userdetail?.companyID || "",
+                        deptid: userdetail?.departmentID || "",
+                    };
+                    const headers = {
+                        "Content-Type": "application/json",
+                        Accept: "*/*",
+                    };
+                    const response = await axios.post(
+                        `${baseUrl.Url}/backend/api/GET_PChallanDetailsById`,
+                        payload,
+                        { headers }
+                    );
+                    if (response.status !== 200)
+                        throw new Error("Failed to fetch vendor data");
+                    console.log("venderos", response.data)
+                    if (response.data.length > 0) {
+                        const mappedProducts = response.data.map((item) => ({
+                            PRODUCTNAME: item.productname,
+                            UOMTITLE: item.uomtitle,
+                            PCDPRODUCT: item.pcdproduct,
+                            PCDUOM: item.pcduom,
+                            PCDQUANTITY: item.pcdquantity,
+                            PCDRATE: item.pcdrate,
+                            PCDTAXABLE: item.pcdtaxable,
+                            PCDCGST: item.pcdcgst,
+                            PCDSGST: item.pcdsgst,
+                            PCDIGST: item.pcdigst,
+                            total: parseFloat(item.pcdtaxable || 0) + parseFloat(item.pcdcgst || 0) + parseFloat(item.pcdsgst || 0) + parseFloat(item.pcdigst || 0),
+                            PCDAID: item.pcdaid,
+                            ISDELETED: item.isdeleted,
+                            BATCHNO: item.batchno,
+                            EXPIRTYDATE: convertToISODate(item.expirydate),
+                            HSNCODE: item.hsncode,
+                            PCDTAMT: item.pcdtamt,
+                        }));
+                        const totalTaxable = mappedProducts.reduce((acc, row) => acc + parseFloat(row.PCDTAXABLE || 0), 0).toFixed(2);
+                        const totalAmount = mappedProducts.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
+
+                        // setFormData({
+                        //     ...formData,
+                        //     PCGATE: totalTaxable,
+                        //     PCNATE: totalAmount,
+                        // });
+
+                        setFormData((prev) => ({
+                            ...prev,
+                            PCGATE: totalTaxable,
+                            PCNATE: totalAmount,
+                        }));
+
+
+                        setRows(mappedProducts);
+                    }
+
+                } catch (error) {
+                    console.error("Error fetching vendor data:", error);
+                }
+            };
+            fetchDetailData();
+            fetchMasterData();
+        }
+    }, [PCAIDD]);
+
+    useEffect(() => {
+        const fetchstates = async () => {
+            try {
+                const headers = {
+                    "Content-Type": "application/json",
+                    Accept: "*/*",
+                };
+                const response = await axios.post(
+                    `${baseUrl.Url}/backend/api/GET_StateCodeDistinct`,
+                    { headers }
+                );
+                if (response.status !== 200)
+                    throw new Error("Failed to fetch vendor data");
+                console.log("requisition setails", response.data)
+                const data = response.data;
+                const statesdata = data
+                    .map(({ sstatename, sstatecode }) => ({
+                        label: sstatename,
+                        value: sstatecode,
+                    }));
+                setstates(statesdata);
+            } catch (error) {
+                console.error("Error fetching vendor data:", error);
+            }
+        };
+        const fetchImplicationsPayamentData = async () => {
+            try {
+                const response = await axios.get(
+                    baseUrl.Url + "/backend/api/Implications/PAYMENT",
+
+                );
+
+                if (response.status !== 200) throw new Error("Failed to fetch implications data");
+
+                const data = response.data;
+
+
+                const implicationsDropdown = data.map(({ iTitle, iValue }) => ({
+                    label: iTitle,
+                    value: iValue,
+                }));
+
+                setpaymentmode(implicationsDropdown);
+            } catch (error) {
+                console.error("Error fetching implications:", error);
+            }
+        };
+        fetchImplicationsPayamentData()
+        fetchstates();
+    }, []);
+
+    useEffect(() => {
+        // setShowForm(true);
+        if (poaid) {
+            const fetchorderdata = async () => {
+                try {
+                    const payload = {
+                        poaid: poaid,
+                        companyid: userdetail?.companyID || "",
+                        deptid: userdetail?.departmentID || "",
+                    };
+                    const headers = {
+                        "Content-Type": "application/json",
+                        Accept: "*/*",
+                    };
+                    const response = await axios.post(
+                        `${baseUrl.Url}/backend/api/GET_PurchaseOrderDataById`,
+                        payload,
+                        { headers }
+                    );
+                    if (response.status !== 200)
+                        throw new Error("Failed to fetch vendor data");
+                    console.log("venderos", response.data)
+                    if (response.data.length > 0) {
+                        setFormData(prevState => ({
+                            ...prevState,
+                            PCPOSUPPLY: states.find((state) => state.value == response.data[0].poplace)?.value || "",
+                            PORDERNO: response.data[0].potranno,
+                        }));
+                        setREQNNO(response.data[0].potranno)
+                        console.log("orderrrrrrrrrrrr", formData.PORDERNO)
+                        console.log("orderrrrrrrrrrrrrrrrformdata", response.data[0].potranno)
+                        const mappedProducts = response.data.map((item) => ({
+                            PRODUCTNAME: item.pname,
+                            UOMTITLE: item.uomtitle,
+                            PCDPRODUCT: item.podproduct,
+                            PCDUOM: item.poduom,
+                            PCDQUANTITY: item.podquantity,
+                            PCDRATE: item.podrate,
+                            PCDTAXABLE: item.podtamt,
+                            PCDCGST: item.podcgst,
+                            PCDSGST: item.podsgst,
+                            PCDIGST: item.podigst,
+                            total: item.podtamt + item.podcgst + item.podsgst + item.podigst,
+                            PCDAID: item.pcdaid,
+                            HSNCODE: item.hsncode,
+                            PCDTAMT: item.podtamt,
+                        }));
+                        console.log("HSNCODE HSNCODE HSNCODE", formData.HSNCODE)
+                        console.log("HSNCODE HSNCODE HSNCODE mappedProducts", mappedProducts)
+                        const totalTaxable = mappedProducts.reduce((acc, row) => acc + parseFloat(row.PCDTAXABLE || 0), 0).toFixed(2);
+                        const totalAmount = mappedProducts.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
+
+                        // setFormData({
+                        //     ...formData,
+                        //     PCGATE: totalTaxable,
+                        //     PCNATE: totalAmount,
+                        // });
+
+                        setFormData((prev) => ({
+                            ...prev,
+                            PCGATE: totalTaxable,
+                            PCNATE: totalAmount,
+                        }));
+
+
+                        setRows(mappedProducts);
+                    }
+                } catch (error) {
+                    console.error("Error fetching vendor data:", error);
+                }
+            };
+
+            fetchorderdata();
+        }
+    }, [poaid, userdetail]);
+
+
+    useEffect(() => {
+        if (vendorid) {
+            const fetchVendors = async () => {
+                console.log("loggggggggggg")
+                try {
+                    const payload = {
+                        praid: "%",
+                        caid: vendorid,
+                        companyid: userdetail?.companyID || "",
+                        deptid: userdetail?.departmentID || "",
+                    };
+                    const headers = {
+                        "Content-Type": "application/json",
+                        Accept: "*/*",
+                    };
+                    const response = await axios.post(
+                        `${baseUrl.Url}/backend/api/GET_CustomerDetails`,
+                        payload,
+                        { headers }
+                    );
+                    if (response.status !== 200)
+                        throw new Error("Failed to fetch vendor data");
+                    console.log("venderos", response.data)
+                    if (response.data.length > 0) {
+                        setFormData(prevState => ({
+                            ...prevState,
+                            PVENDORNAME: response.data[0].ccompanyname,
+                            PCVENDOR: response.data[0].caid,
+                            PCVCONTACT: response.data[0].ccontactpersonmobile,
+                            VENDORSTATE: response.data[0].cstate,
+                            PCVEMAIL: response.data[0].cemail,
+                            PCPOSUPPLY: states.find((state) => state.value == response.data[0].cstate)?.value || "",
+                        }));
+                        console.log("Pvendorname pvendorname pvendorname formdata", formData.PVENDORNAME);
+                        console.log("Pvendorname pvendorname pvendorname", response.data[0].ccompanyname)
+
+                    }
+                } catch (error) {
+                    console.error("Error fetching vendor data:", error);
+                }
+            };
+
+            fetchVendors();
+        }
+    }, [vendorid, userdetail]);
+
+
+    // useEffect(() => {
+    //     setShowForm(true);
+    //     if (vendorid) {
+    //         const fetchVendors = async () => {
+    //             try {
+    //                 const payload = {
+    //                     praid: "%",
+    //                     caid: vendorid,
+    //                     companyid: userdetail?.companyID || "",
+    //                     deptid: userdetail?.departmentID || "",
+    //                 };
+    //                 const headers = {
+    //                     "Content-Type": "application/json",
+    //                     Accept: "*/*",
+    //                 };
+    //                 const response = await axios.post(
+    //                     `${baseUrl.Url}/backend/api/GET_CustomerDetails`,
+    //                     payload,
+    //                     { headers }
+    //                 );
+    //                 if (response.status !== 200)
+    //                     throw new Error("Failed to fetch vendor data");
+    //                 console.log("venderos information", response.data)
+    //                 if (response.data.length > 0) {
+    //                      const vendor = response.data[0];
+    //                     console.log("donnnnneeeeee")
+
+    //                     setFormData({
+    //                         PVENDORNAME: vendor.ccompanyname,
+    //                         PCVEMAIL: vendor.cemail,
+    //                         PCVCONTACT: vendor.ccontactpersonmobile,
+    //                         PCVENDOR: vendor.caid,
+    //                     });
+    //                     // setFormData(prevState => ({
+    //                     //     ...prevState,
+    //                     //     PVENDORNAME: response.data[0].ccompanyname,
+    //                     //     PCVEMAIL: response.data[0].cemail,
+    //                     //     PCVCONTACT: response.data[0].ccontactpersonmobile,
+    //                     //     PCVENDOR: response.data[0].caid,
+    //                     // }));
+    //                     console.log("ccccccccccccccc",response.data[0].ccompanyname)
+    //                 }console.log("cccccccccccccccformData",formData.PVENDORNAME)
+
+    //             } catch (error) {
+    //                 console.error("Error fetching vendor data:", error);
+    //             }
+    //         };
+
+    //         fetchVendors();
+
+    //     }
+    // }, [vendorid, userdetail]);
+
+    useEffect(() => {
+        console.log("formData changed:", formData);
+    }, [formData]);
+
+
+    // const handleInputChange = (event, index, field) => {
+    //     const updatedRows = [...rows];
+    //     updatedRows[index][field] = event.target.value;
+
+    //     if (field === 'PCDQUANTITY' || field === 'PCDRATE') {
+    //         const quantity = parseFloat(updatedRows[index].PCDQUANTITY || 0) || 0;
+    //         const rate = parseFloat(updatedRows[index].PCDRATE || 0) || 0;
+    //         const taxableValue = quantity * rate;
+
+
+    //         const cgst = parseFloat(updatedRows[index].PCDCGST || 0) || 0;
+    //         const sgst = parseFloat(updatedRows[index].PCDSGST || 0) || 0;
+    //         const igst = parseFloat(updatedRows[index].PCDIGST || 0) || 0;
+
+    //         const PCDTAMT = taxableValue + cgst + sgst + igst;
+
+    //         updatedRows[index].PCDTAXABLE = taxableValue.toFixed(2);
+    //         updatedRows[index].PCDTAMT = PCDTAMT.toFixed(2);
+    //         updatedRows[index].total = PCDTAMT.toFixed(2);
+    //     }
+
+    //     setRows(updatedRows);
+    // };
+
+    const handleInputChange = (event, index, field) => {
+        const updatedRows = [...rows];
+        updatedRows[index][field] = event.target.value;
+
+        if (field === 'PCDQUANTITY' || field === 'PCDRATE') {
+            const quantity = parseFloat(updatedRows[index].PCDQUANTITY || 0) || 0;
+            const rate = parseFloat(updatedRows[index].PCDRATE || 0) || 0;
+            const taxableValue = quantity * rate;
+
+            updatedRows[index].PCDTAXABLE = Math.round(taxableValue);
+
+            if (formData.PCPOSUPPLY !== userdetail?.companystate) {
+                updatedRows[index].PCDIGST = parseFloat((Math.round(taxableValue * 0.18)));
+                updatedRows[index].PCDCGST = 0;
+                updatedRows[index].PCDSGST = 0;
+            } else {
+                // const halfGST = 1 / 2;
+                updatedRows[index].PCDIGST = 0;
+                updatedRows[index].PCDCGST = parseFloat((Math.round((taxableValue * 9) / 100)));
+                updatedRows[index].PCDSGST = parseFloat((Math.round((taxableValue * 9) / 100)));
+            }
+
+
+            updatedRows[index].total = taxableValue + updatedRows[index].PCDIGST + updatedRows[index].PCDCGST + updatedRows[index].PCDSGST;
+
+            setRows(updatedRows);
+        }
+
+        setRows(updatedRows);
+    };
+
+
+    const totalTaxable = Array.isArray(rows)
+        ? rows.reduce((sum, item) => {
+            return sum + parseFloat(item?.PCDTAXABLE || 0);
+        }, 0)
+        : 0;
+
+    const totalAmount = Array.isArray(rows)
+        ? rows.reduce((sum, item) => {
+            return sum + parseFloat(item?.total || 0);
+        }, 0)
+        : 0;
+
+
+
+    const showConfirmationAlert = () => {
+        MySwal.fire({
+            title: "Are you sure?",
+            text: "Do you want to save this data?",
+            showCancelButton: true,
+            confirmButtonColor: "#00ff00",
+            confirmButtonText: "SAVE",
+            cancelButtonColor: "#092C4C",
+            cancelButtonText: "CANCEL",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                handleFormSubmission();
+                handleModalConfirm();
+            }
+        });
+    };
+
+    const handleModalConfirm = () => {
+        console.log('Form Data:', formData);
+        console.log('Rows Data:', rows);
+
+    };
+
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        const form = event.target.closest("form");
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        showConfirmationAlert();
+    };
+
+    const handleFormSubmission = async () => {
+        try {
+            const payload1 = {
+                "pcaid": PCAIDD ? PCAIDD : GUID,
+                "pctrnno": formData.PCTRNNO,
+                "pono": POTRANNO ? POTRANNO : REQNNO,
+                "pcseller": formData.PCVENDOR,
+                "pcconsigner": formData.PCCONSIGNER,
+                "pcvno": formData.PCVNO,
+                "pcposupply": formData.PCPOSUPPLY,
+                "pcnarration": formData.PCNARRATION,
+                "pcdate": formData.PCDATE,
+                "pcnamt": formData.PCNATE,
+                "pcgamt": formData.PCGATE,
+                "companyid": userdetail?.companyID || "",
+                "deptid": userdetail?.departmentID || "",
+                "poreff": formData.POREFF ? formData.POREFF || "" : poaid || "",
+                "statusid": "2",
+                "paymentmode": formData.PMODE,
+            };
+
+            const headers = {
+                "Content-Type": "application/json",
+                Accept: "*/*",
+            };
+
+
+            const response1 = await axios.post(
+                baseUrl.Url + "/backend/api/AddUpdPChallanMaster",
+                payload1,
+                { headers }
+            );
+
+            console.log("payload1", payload1);
+
+            if (response1.status === 200) {
+                const payload2 = rows?.map((row) => ({
+                    "pcdaid": row.PCDAID ? row.PCDAID : ACSPLGUID.getNew(),
+                    "pcaid": PCAIDD ? PCAIDD : GUID,
+                    "pcdproduct": row.PCDPRODUCT,
+                    "pcduom": row.PCDUOM,
+                    "pcdquantity": row.PCDQUANTITY.toString(),
+                    "pcdrate": parseFloat(row.PCDRATE),
+                    "pcdtamt": parseFloat(row.PCDTAMT),
+                    "pcdtaxable": row.PCDTAXABLE.toString(),
+                    "pcdigst": parseFloat(row.PCDIGST),
+                    "pcdsgst": parseFloat(row.PCDSGST),
+                    "pcdcgst": parseFloat(row.PCDCGST),
+                    "companyid": userdetail?.companyID || "",
+                    "deptid": userdetail?.departmentID || "",
+                    "expirydate": row.EXPIRTYDATE,
+                    "hsncode": row.HSNCODE,
+                    "batchno": row.BATCHNO,
+                }));
+
+                console.log("payload2", payload2);
+
+
+                const response2 = await axios.post(
+                    baseUrl.Url + "/backend/api/AddUpdPChallanDetails",
+                    payload2,
+                    { headers }
+                );
+
+                if (response2.status === 200) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Saved!",
+                        text: "Data saved successfully.",
+                        confirmButtonText: "OK",
+                    })
+                    // .then((result) => {
+                    //     if (result.isConfirmed) {
+                    //         const modal = document.getElementById("EditPurchasechallan");
+                    //         if (modal) {
+                    //             modal.classList.remove("show");
+                    //             modal.style.display = "none";
+                    //             document.body.classList.remove("modal-open");
+                    //             document.body.style.overflow = "auto";
+
+                    //             const backdrop = document.querySelector(".modal-backdrop");
+                    //             if (backdrop) {
+                    //                 backdrop.remove();
+                    //             }
+                    //         }
+
+
+                    //         setFormData({
+                    //             PCTRNNO: '',
+                    //             PCDATE: '',
+                    //             PCVNO: '',
+                    //             PCPOSUPPLY: '',
+                    //             PCVENDOR: '',
+                    //             PCCONSIGNER: '',
+                    //             PCNARRATION: '',
+                    //             PCNATE: 0,
+                    //             PCGATE: 0,
+                    //             PVENDORNAME: '',
+                    //             PCVEMAIL: '',
+                    //             PCVCONTACT: '',
+                    //             POREFF: '',
+                    //             PMODE: '',
+                    //         });
+
+                    //         setREQNNO("");
+                    //         setRows([]);
+
+
+                    //         const backdrop = document.querySelector(".modal-backdrop");
+                    //         if (backdrop) {
+                    //             backdrop.remove();
+                    //         }
+                    //     }
+                    // });
+                }
+            }
+        } catch (error) {
+            console.error("Submission Error:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Failed to save data. Please try again.",
+            });
+        }
+    };
+
+
+    useEffect(() => {
+        const handleKeydown = (event) => {
+            if (event.ctrlKey && event.key === 's') {
+                event.preventDefault();
+                handleSubmit(event);
+            }
+            if (event.ctrlKey && event.key === 'e') {
+
+                console.log("Ctrl+E Pressed");
+            }
+        };
+        document.addEventListener('keydown', handleKeydown);
+        return () => {
+            document.removeEventListener('keydown', handleKeydown);
+        };
+    }, [rows, formData]);
+
+
+    useEffect(() => {
+        if (rows && rows.length > 0) {
+            const totalTaxable = rows.reduce((acc, row) => acc + parseFloat(row.PCDTAXABLE || 0), 0).toFixed(2);
+            const totalAmount = rows.reduce((acc, row) => acc + parseFloat(row.PCDTAMT || 0), 0).toFixed(2);
+
+            // setFormData({
+            //     ...formData,
+            //     PCGATE: totalTaxable,
+            //     PCNATE: totalAmount,
+            // });
+
+            setFormData((prev) => ({
+                ...prev,
+                PCGATE: totalTaxable,
+                PCNATE: totalAmount,
+            }));
+
+        }
+    }, [rows]);
+
+    const handleKeyDown = (e, nextRef) => {
+        if (e.key === 'Enter' && nextRef.current) {
+            nextRef.current.focus();
+            e.preventDefault();
+        }
+    };
+
+    const handleChange1 = (e) => {
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value.trimStart(),
+        }));
+    };
+
+    const handleDropdownChange = (selectedOption, field) => {
+        setFormData(prevData => ({
+            ...prevData,
+            [field]: selectedOption ? selectedOption.value : "",
+        }));
+    }
+
+    const handleSearch = async (REQNNO) => {
+        if (REQNNO) {
+            setShowForm(true);
+            try {
+                const payload = {
+                    potranno: REQNNO,
+                    companyid: userdetail?.companyID || "",
+                    deptid: userdetail?.departmentID || "",
+                };
+                const headers = {
+                    "Content-Type": "application/json",
+                    Accept: "*/*",
+                };
+                const response = await axios.post(
+                    `${baseUrl.Url}/backend/api/GET_POrderNoSearch`,
+                    payload,
+                    { headers }
+                );
+                if (response.status !== 200)
+                    throw new Error("Failed to fetch vendor data");
+                console.log("billnodata", response.data)
+
+                if (response.data.length > 0) {
+                    const mappedProducts = response.data.map((item) => ({
+                        PRODUCTNAME: item.productname,
+                        UOMTITLE: item.uomtitle,
+                        PCDPRODUCT: item.podproduct,
+                        PCDUOM: item.poduom,
+                        PCDQUANTITY: item.podquantity,
+                        PCDRATE: item.podrate,
+                        PCDTAXABLE: item.podtamt,
+                        PCDCGST: item.podcgst,
+                        PCDSGST: item.podsgst,
+                        PCDIGST: item.podigst,
+                        total: item.podtamt + item.podcgst + item.podsgst + item.podigst,
+                        PCDAID: item.pcdaid,
+                        HSNCODE: item.hsncode,
+                        PCDTAMT: item.podtamt,
+
+                    }));
+                    setRows(mappedProducts);
+                    const totalTaxable = mappedProducts.reduce((acc, row) => acc + parseFloat(row.PCDTAXABLE || 0), 0).toFixed(2);
+                    const totalAmount = mappedProducts.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
+                    setFormData(prevState => ({
+                        ...prevState,
+                        PVENDORNAME: response.data[0].vendorname,
+                        PCVEMAIL: response.data[0].email,
+                        PCVCONTACT: response.data[0].contactnumber,
+                        PCVENDOR: response.data[0].povendorid,
+                        PCPOSUPPLY: states.find((state) => state.value == response.data[0].poplace)?.value || "",
+                        // PCGATE: totalTaxable?.toFixed(2),
+                        // PCNATE: totalAmount?.toFixed(2),
+                        PCGATE: Number(totalTaxable)?.toFixed(2),
+                        PCNATE: Number(totalAmount)?.toFixed(2),
+
+                    }));
+                }
+
+            } catch (error) {
+                console.error("Error fetching vendor data:", error);
+            }
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Validation Error",
+                text: "Please fill the Purchase Order Number ",
+            }).then(() => {
+                REQNNOref.current.focus();
+            })
+        }
+    };
+
+    const showExitAlert = () => {
+        MySwal.fire({
+            title: "Are you sure?",
+            text: "Do you want to Exit?",
+            showCancelButton: true,
+            confirmButtonColor: "#00ff00",
+            confirmButtonText: "YES",
+            cancelButtonColor: "#092C4C",
+            cancelButtonText: "NO",
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                if (onRefresh) {
+                    onRefresh(); // refreshReceiptData from Bills.jsx
+                }
+
+                setShowForm(false)
+                setREQNNO('')
+
+                const modal = document.getElementById("EditPurchasechallan");
+                if (modal) {
+                    modal.classList.remove("show");
+                    modal.style.display = "none";
+                    modal.setAttribute("aria-hidden", "true");
+
+
+                    document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+                        backdrop.remove();
+                    });
+
+
+                    document.body.classList.remove("modal-open");
+                    document.body.style.overflow = "";
+                    document.body.style.paddingRight = "";
+                }
+
+                setFormData({
+                    PCTRNNO: '',
+                    PCDATE: '',
+                    PCVNO: '',
+                    PCPOSUPPLY: '',
+                    PCVENDOR: '',
+                    PCCONSIGNER: '',
+                    PCNARRATION: '',
+                    PCNATE: 0,
+                    PCGATE: 0,
+                    PVENDORNAME: '',
+                    PCVEMAIL: '',
+                    PCVCONTACT: '',
+                    POREFF: '',
+                    PMODE: '',
+                });
+                setRows([]);
+            }
+        });
+    };
+
+
+    return (
+        <div>
+            <div
+                className="modal fade"
+                id="EditPurchasechallan"
+                tabIndex={-1}
+                aria-labelledby="exampleModalFullscreenLabel"
+                aria-hidden="true"
+            >
+                <div className="modal-dialog modal-fullscreen mbgcolor">
+                    <div className="modal-content mbgcolor">
+                        <div className="modal-content mbgcolor">
+                            <div className="page-wrapper-new p-0">
+                                <div className="content mbgcolor">
+                                    <div className="modal-header border-0 custom-modal-header">
+                                        <div className="page-title">
+                                            <h4> Purchase Challan Pickup</h4>
+                                        </div>
+                                        <div className="page-btn">
+                                            <Link className="btn btn-secondary"
+                                                aria-label="Close"
+
+                                                onClick={showExitAlert}
+                                            >
+                                                <ArrowLeft className="me-2" />
+                                                Back to index
+                                            </Link>
+                                        </div>
+                                    </div>
+
+
+                                    {!showForm && (
+                                        <div className="row justify-content-center m-1">
+                                            <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-4">
+                                                <div className="search-input d-flex align-items-center">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search Purchase Order No"
+                                                        className="form-control w-100"
+                                                        value={REQNNO}
+                                                        onChange={(e) => setREQNNO(e.target.value)}
+                                                        ref={REQNNOref}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-primary ms-3 mt-1 mt-sm-0"
+                                                        onClick={() => handleSearch(REQNNO)}
+                                                    >
+                                                        Search
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="modal-body custom-modal-body">
+                                        {showForm && (
+                                            <form onSubmit={handleSubmit}>
+                                                <div className="row">
+                                                    <div className="col-lg-3 col-md-3 col-sm-12">
+                                                        <div className="mb-3 add-product form-label">
+                                                            <label className="form-label text-dark">Challan No</label>
+                                                            <input
+                                                                ref={PCTRNNORef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PCTRNNO"
+                                                                value={formData.PCTRNNO}
+                                                                onChange={handleChange1}
+                                                                onKeyDown={(e) => handleKeyDown(e, PCDATERef)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-3 col-sm-3 col-12">
+                                                        <div className="input-blocks">
+                                                            <label>Challan Date</label>
+                                                            <div className="input-groupicon calender-input">
+                                                                <div className="info-img" />
+                                                                <input
+                                                                    ref={PCDATERef}
+                                                                    type="date"
+                                                                    className="form-control"
+                                                                    value={formData.PCDATE}
+                                                                    placeholder="Choose Date"
+                                                                    onChange={(e) =>
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            PCDATE: e.target.value,
+                                                                        })
+                                                                    }
+                                                                    onKeyDown={(e) => handleKeyDown(e, PCVNORef)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-3 col-sm-3 col-12">
+                                                        <div className="input-blocks">
+                                                            <label>Payment Mode</label>
+                                                            <div className="input-groupicon calender-input">
+                                                                <div className="info-img" />
+                                                                <Select
+                                                                    classNamePrefix="react-select"
+                                                                    options={paymentmode}
+                                                                    openMenuOnFocus={true}
+                                                                    value={paymentmode.find(option => option.value == formData.PMODE) || null}
+                                                                    onChange={(selectedOption) => handleDropdownChange(selectedOption, "PMODE")}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="row">
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="input-blocks add-product">
+                                                            <label>vendor name</label>
+                                                            <input
+                                                                ref={PCVENDORRef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PVENDORNAME"
+                                                                value={formData.PVENDORNAME || ""}
+                                                                onChange={handleChange1}
+                                                                readOnly
+
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="input-blocks add-product">
+                                                            <label>vendor Email</label>
+                                                            <input
+                                                                ref={PCVENDORRef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PCVEMAIL"
+                                                                value={formData.PCVEMAIL}
+                                                                onChange={handleChange1}
+                                                                readOnly
+
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="input-blocks add-product">
+                                                            <label>vendor contact</label>
+                                                            <input
+                                                                ref={PCVENDORRef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PCVCONTACT"
+                                                                value={formData.PCVCONTACT}
+                                                                readOnly
+                                                                onChange={handleChange1}
+
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="input-blocks add-product">
+                                                            <label className="form-label text-dark">Consigner</label>
+                                                            <input
+                                                                ref={PCCONSIGNERRef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PCCONSIGNER"
+                                                                value={formData.PCCONSIGNER}
+                                                                onChange={handleChange1}
+
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="mb-3 add-product form-label">
+                                                            <label className="form-label text-dark">Vehicle No</label>
+                                                            <input
+                                                                ref={PCVNORef}
+                                                                type="text"
+                                                                className="form-control border"
+                                                                name="PCVNO"
+                                                                value={formData.PCVNO}
+                                                                onChange={handleChange1}
+                                                                onKeyDown={(e) => handleKeyDown(e, PCPOSUPPLYRef)}
+                                                            />
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div className="col-lg-4 col-md-4 col-sm-12">
+                                                        <div className="mb-3 add-product form-label">
+                                                            <label className="form-label text-dark">Place of supply</label>
+
+                                                            <Select
+                                                                ref={PCPOSUPPLYRef}
+                                                                classNamePrefix="react-select"
+                                                                options={states}
+                                                                openMenuOnFocus={true}
+                                                                value={states.find(option => option.value === formData.PCPOSUPPLY) || null}
+                                                                onChange={(selectedOption) => handleDropdownChange(selectedOption, "PCPOSUPPLY")}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                                <div className="row">
+                                                    <div className="col-12">
+                                                        <div className="form-label add-product form-label">
+                                                            <label className="form-label text-dark">Narration</label>
+                                                            <textarea
+                                                                ref={PCNARRATIONRef}
+                                                                rows={2}
+                                                                cols={2}
+                                                                className="form-control border text-secondary"
+                                                                placeholder="Enter text here"
+                                                                name="PCNARRATION"
+                                                                value={formData.PCNARRATION}
+                                                                onChange={handleChange1}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="border p-3 rounded shadow-sm mb-4 mt-5">
+                                                    <div className="row">
+                                                        <div className="col-lg-12">
+                                                            <div className="modal-body-table">
+                                                                <div className="table-responsive">
+                                                                    <table className="table datanew">
+                                                                        <table className="table table-bordered">
+                                                                            <thead className="thead-dark">
+                                                                                <tr>
+                                                                                    <th className="col-1 text-center">Product</th>
+                                                                                    <th className="col-1 text-center">UOM</th>
+                                                                                    <th className="col-1 text-center">HSN Code</th>
+                                                                                    <th className="col-1 text-center">BATCH NO</th>
+                                                                                    <th className="col-1 text-center">EXPIRY DATE</th>
+                                                                                    <th className="col-1 text-center">Quantity</th>
+                                                                                    <th className="col-1 text-center">Rate</th>
+                                                                                    <th className="col-1 text-center">Taxable Value</th>
+                                                                                    <th className="col-1 text-center">CGST</th>
+                                                                                    <th className="col-1 text-center">SGST</th>
+                                                                                    <th className="col-1 text-center">IGST</th>
+                                                                                    <th className="col-1 text-center">Total</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                {rows?.map((row, index) => (
+                                                                                    <tr key={index}>
+                                                                                        <td><span>{row.PRODUCTNAME}</span></td>
+                                                                                        <td><span>{row.UOMTITLE}</span></td>
+                                                                                        <td className="text-end"><span>{row.HSNCODE}</span></td>
+                                                                                        <td>
+                                                                                            <input
+                                                                                                type="text"
+                                                                                                className="form-control form-control-sm border-0 border-bottom border-warning text-center"
+                                                                                                value={row.BATCHNO}
+                                                                                                onChange={(e) => handleInputChange(e, index, 'BATCHNO')}
+                                                                                                required
+                                                                                            />
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <input
+                                                                                                type="date"
+                                                                                                className="form-control form-control-sm border-0 border-bottom border-warning text-center"
+                                                                                                value={row.EXPIRTYDATE}
+                                                                                                onChange={(e) => handleInputChange(e, index, 'EXPIRTYDATE')}
+                                                                                                required
+                                                                                            />
+                                                                                        </td>
+                                                                                        <td>
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                className="form-control form-control-sm border-0 border-bottom border-warning text-end"
+                                                                                                value={row.PCDQUANTITY}
+                                                                                                onChange={(e) => handleInputChange(e, index, 'PCDQUANTITY')}
+                                                                                                required
+                                                                                            />
+                                                                                        </td>
+                                                                                        <td className="text-end"><span>{row.PCDRATE}</span></td>
+                                                                                        <td className="text-end"><span>{row.PCDTAXABLE}</span></td>
+                                                                                        <td className="text-end"><span>{row.PCDCGST}</span></td>
+                                                                                        <td className="text-end"><span>{row.PCDSGST}</span></td>
+                                                                                        <td className="text-end"><span>{row.PCDIGST}</span></td>
+                                                                                        <td className="text-end"><span>{row.total}</span></td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                            <tfoot>
+                                                                                <tr>
+                                                                                    <td colSpan="6"></td>
+                                                                                    <td className="text-end"><strong>Total Taxable:</strong></td>
+                                                                                    <td>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            className="form-control border-0 text-end"
+                                                                                            name="PCGATE"
+                                                                                            // value={Number(formData.PCGATE).toFixed(2) || '0.00'}
+                                                                                            value={totalTaxable}
+                                                                                            readOnly
+                                                                                        />
+                                                                                    </td>
+                                                                                    <td colSpan="2"></td>
+                                                                                    <td className="text-end"><strong>Total:</strong></td>
+                                                                                    <td>
+                                                                                        <input
+                                                                                            type="text"
+                                                                                            className="form-control border-0 text-end"
+                                                                                            name="PCNATE"
+                                                                                            // value={Number(formData.PCNATE).toFixed(2) || '0.00'}
+                                                                                            value={totalAmount}
+                                                                                            readOnly
+                                                                                        />
+                                                                                    </td>
+                                                                                </tr>
+                                                                            </tfoot>
+                                                                        </table>
+
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="col-lg-12">
+                                                    <div className="modal-footer-btn">
+                                                        <button
+                                                            type="button"
+                                                            className="btn btn-cancel me-2"
+
+                                                            onClick={showExitAlert}
+                                                        >
+                                                            Exit
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            className="btn btn-submit"
+                                                        >
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div >
+    )
+}
+
+export default ChallanPikUpForm;
+
