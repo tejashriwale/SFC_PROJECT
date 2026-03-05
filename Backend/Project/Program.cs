@@ -43,10 +43,9 @@ builder.Services.AddCors(options =>
 
     options.AddPolicy("Production", policy =>
     {
-        policy.WithOrigins("http://adsvr:333")
+        policy.WithOrigins("https://www.shramjeevanagrofarm.com")
               .AllowAnyMethod()
               .AllowAnyHeader();
-              // Removed .AllowCredentials() to match frontend behavior
     });
 });
 
