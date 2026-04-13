@@ -39,7 +39,7 @@ function ProceedQuotation({ SCAID, SQAMAID, SQNO, onRefresh }) {
 
     const [formData, setFormData] = useState({
         SCTRNNO: '',
-        SCDATE: new Date().toISOString().split('T')[0], // Current date set here
+        SCDATE: userdetail?.APPDT || new Date().toISOString().split('T')[0],
         SCVNO: '',
         SQNO: '',
         SCPOSUPPLY: '',
@@ -384,7 +384,7 @@ function ProceedQuotation({ SCAID, SQAMAID, SQNO, onRefresh }) {
 
                     setFormData({
                         SCTRNNO: '',
-                        SCDATE: new Date().toISOString().split('T')[0], // Current date set here
+                        SCDATE: userdetail?.APPDT || new Date().toISOString().split('T')[0],
                         SCVNO: '',
                         SQNO: '',
                         SCPOSUPPLY: '',
@@ -597,7 +597,7 @@ function ProceedQuotation({ SCAID, SQAMAID, SQNO, onRefresh }) {
 
                 setFormData({
                     SCTRNNO: '',
-                    SCDATE: new Date().toISOString().split('T')[0], // Current date set here
+                    SCDATE: userdetail?.APPDT || new Date().toISOString().split('T')[0],
                     SCVNO: '',
                     SQNO: '',
                     SCPOSUPPLY: '',

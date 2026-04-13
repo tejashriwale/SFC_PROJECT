@@ -48,7 +48,7 @@ function AddSalesEnquiry({ SRAID, onRefresh }) {
 
     const [masterData, setMasterData] = useState({
         requisitionnumber: "",
-        requisitiondate: new Date().toISOString().split('T')[0], // Current date set here
+        requisitiondate: userdetail?.APPDT || new Date().toISOString().split('T')[0],
         enquirynumber: "",
         category: "",
         vendor: "",
@@ -994,7 +994,7 @@ function AddSalesEnquiry({ SRAID, onRefresh }) {
 
                 setMasterData({
                     requisitionnumber: "",
-                    requisitiondate: new Date().toISOString().split('T')[0], // reset to today's date
+                    requisitiondate: userdetail?.APPDT || new Date().toISOString().split('T')[0],
                     enquirynumber: "",
                     category: "",
                     vendor: "",

@@ -17,6 +17,7 @@ import {
     Edit,
     Trash2,
 } from "feather-icons-react/build/IconComponents";
+import BillReceipt from "./BillReceipt";
 const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
     console.log("VAIDVAIDVAID", SLVMID);
     const { userdetail } = getUserData();
@@ -37,6 +38,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
         Trader: "",
         VehicleNumber: "",
         CaretCount: "",
+        PoNo: "",
         date: userdetail?.APPDT || "",
     });
 
@@ -82,7 +84,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
     }, []);
 
     useEffect(() => {
-        if (SLVMID != "") {
+        if (SLVMID) {
             const fetchData = async () => {
                 try {
                     const payload1 = {
@@ -110,7 +112,8 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                             Grade: data.gradE1 ? data.gradE1.split(',') : [],
                             Trader: data.tradeR1 || "",
                             VehicleNumber: data.vehicleno || "",
-                            CaretCount: data.caretcount || ""
+                            CaretCount: data.caretcount || "",
+                            PoNo: data.pono || ""
                         });
                         console.log(data, "hrutikhghvjhjh")
                     }
@@ -245,6 +248,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 vehicleno: formData.VehicleNumber,
                 caretcount: formData.CaretCount?.toString(),
                 grade: formData.Grade?.join(',') || "",
+                pono: formData.PoNo || "",
                 uaid: userdetail?.uaid || "",
                 companyid: userdetail?.companyID || "",
                 deptid: userdetail?.departmentID || "",
@@ -356,6 +360,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 Trader: "",
                 VehicleNumber: "",
                 CaretCount: "",
+                PoNo: "",
             });
             setTableData1([]);
 
@@ -414,6 +419,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 Trader: "",
                 VehicleNumber: "",
                 CaretCount: "",
+                PoNo: "",
             });
             setTableData1([]);
         }
@@ -442,6 +448,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                     Trader: "",
                     VehicleNumber: "",
                     CaretCount: "",
+                    PoNo: "",
                 })
                 setTableData1([])
                 // const modal = document.getElementById("AddVehicleLoading");
@@ -588,9 +595,11 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 const newCount = name === 'count' ? inputCount : parseFloat(item.count || 0);
                 const rate = parseFloat(row.rate || 0);
                 const charges = parseFloat(item.charges || 0);
+                const msize = parseFloat(item.msize || 0);
+                const totalWeight = newCount * msize;
                 const totalamount = newCount * rate;
                 console.log("totalamount totalamount totalamount", totalamount)
-                const expense = newCount * charges;
+                const expense = name === 'expense' ? (parseFloat(value) || 0) : (totalWeight * charges);
                 return {
                     ...item,
                     [name]: value,
@@ -852,6 +861,18 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                 onChange={handleChange}
                                                             />
                                                         </div>
+                                                        <div className="col-lg-2 col-md-6 mb-3 col-6">
+                                                            <label htmlFor="PoNo" className="form-label">PO No</label>
+                                                            <input
+                                                                placeholder="Enter PO No"
+                                                                type="text"
+                                                                id="PoNo"
+                                                                className="form-control"
+                                                                name="PoNo"
+                                                                value={formData.PoNo}
+                                                                onChange={handleChange}
+                                                            />
+                                                        </div>
                                                         <div className="col-lg-2  col-md-6 mb-3 col-6">
                                                             <label htmlFor="Caret Count" className="form-label">Crate Count</label>
                                                             <input
@@ -912,7 +933,14 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                                                 />
                                                                                             </td>
                                                                                             <td className="text-center">
-                                                                                                ₹ {row.expense ? row.expense.toFixed(2) : "0.00"}
+                                                                                                <input
+                                                                                                    min={0}
+                                                                                                    type="number"
+                                                                                                    name="expense"
+                                                                                                    className="form-control text-center"
+                                                                                                    value={row.expense || ""}
+                                                                                                    onChange={(e) => handleRateChange(e, row)}
+                                                                                                />
                                                                                             </td>
                                                                                             <td className="text-center">
                                                                                                 ₹ {row.totalamount ? row.totalamount.toFixed(2) : "0.00"}
@@ -949,36 +977,42 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                 gap: '10px',
                                                                 width: isMobile ? '100%' : 'auto'
                                                             }}>
-                                                                <div style={{
-                                                                    fontWeight: 'bold',
-                                                                    border: '1px solid #ccc',
-                                                                    padding: '6px 16px',
-                                                                    borderRadius: '4px',
-                                                                    backgroundColor: '#f9f9f9',
-                                                                    minWidth: '140px',
-                                                                    textAlign: 'right',
-                                                                    width: isMobile ? '100%' : 'auto'
-                                                                }}>
-                                                                    ₹ {TableData1
-                                                                        .filter(row => parseInt(row.isdeleted || 0) !== 1)
-                                                                        .reduce((sum, row) => sum + (parseFloat(row.expense) || 0), 0)
-                                                                        .toFixed(2)} (Expense)
-                                                                </div>
-                                                                <div style={{
-                                                                    fontWeight: 'bold',
-                                                                    border: '1px solid #ccc',
-                                                                    padding: '6px 16px',
-                                                                    borderRadius: '4px',
-                                                                    backgroundColor: '#f9f9f9',
-                                                                    minWidth: '140px',
-                                                                    textAlign: 'right',
-                                                                    width: isMobile ? '100%' : 'auto'
-                                                                }}>
-                                                                    ₹ {TableData1
-                                                                        .filter(row => parseInt(row.isdeleted || 0) !== 1)
-                                                                        .reduce((sum, row) => sum + (parseFloat(row.totalamount) || 0), 0)
-                                                                        .toFixed(2)} (Total)
-                                                                </div>
+                                                                {(() => {
+                                                                    const activeRows = TableData1.filter(row => parseInt(row.isdeleted || 0) !== 1);
+                                                                    const expenseTotal = activeRows.reduce((sum, row) => sum + (parseFloat(row.expense) || 0), 0);
+                                                                    const amountTotal = activeRows.reduce((sum, row) => sum + (parseFloat(row.totalamount) || 0), 0);
+                                                                    const grandTotal = expenseTotal + amountTotal;
+                                                                    return (
+                                                                        <div style={{
+                                                                            fontWeight: 'bold',
+                                                                            fontSize: '16px',
+                                                                            border: '2px solid #092C4C',
+                                                                            padding: '8px 20px',
+                                                                            borderRadius: '6px',
+                                                                            backgroundColor: '#fff3cd',
+                                                                            minWidth: '200px',
+                                                                            textAlign: 'right',
+                                                                            width: isMobile ? '100%' : 'auto',
+                                                                            color: '#092C4C'
+                                                                        }}>
+                                                                            <span>₹ {expenseTotal.toFixed(2)} (Expense)</span>
+                                                                            <span style={{ margin: '0 6px' }}>+</span>
+                                                                            <span>₹ {amountTotal.toFixed(2)} (Total)</span>
+                                                                            <span style={{ margin: '0 6px' }}>=</span>
+                                                                            <span style={{
+                                                                                fontSize: '18px',
+                                                                                fontWeight: '800',
+                                                                                color: '#d63384',
+                                                                                backgroundColor: '#fff',
+                                                                                padding: '2px 10px',
+                                                                                borderRadius: '4px',
+                                                                                border: '1px solid #d63384'
+                                                                            }}>
+                                                                                ₹ {grandTotal.toFixed(2)}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -986,7 +1020,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                 <div className="col-lg-12">
                                                     <div className="text-end">
                                                         <div className="row justify-content-end">
-                                                            <div className="col-12 col-md-1 mb-2 order-1 order-md-2">
+                                                            <div className="col-12 col-md-1 mb-2 order-1 order-md-3">
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-submit w-100"
@@ -995,7 +1029,22 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                     Save
                                                                 </button>
                                                             </div>
-                                                            <div className="col-12 col-md-1 mb-2 order-2 order-md-1">
+                                                            <div className="col-12 col-md-1 mb-2 order-2 order-md-2">
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-info w-100 text-white"
+                                                                    onClick={() => {
+                                                                        const modalElement = document.getElementById('loading-bill-receipt');
+                                                                        if (modalElement) {
+                                                                            const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+                                                                            modal.show();
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Print Bill
+                                                                </button>
+                                                            </div>
+                                                            <div className="col-12 col-md-1 mb-2 order-3 order-md-1">
                                                                 <button
                                                                     type="button"
                                                                     className="btn btn-cancel w-100"
@@ -1016,6 +1065,21 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                     </div >
                 </div >
             </div >
+
+            <BillReceipt
+                modalId="loading-bill-receipt"
+                billNo={formData.PoNo || SLVMID || ''}
+                date={formData.date ? formatDate_1(formData.date) : ''}
+                farmerName={Trader.find(t => t.value === formData.Trader)?.label || ''}
+                mobileNo=""
+                vehNo={formData.VehicleNumber || ''}
+                tableData={TableData1.filter(r => parseInt(r.isdeleted || 0) !== 1 && parseFloat(r.count) > 0).map(r => ({
+                    cratecount: r.count,
+                    rate: r.expense ? (r.expense / (parseFloat(r.count) || 1)).toFixed(2) : '0',
+                    weight: r.totalamount ? r.totalamount.toFixed(2) : '0'
+                }))}
+                totalAmount={TableData1.filter(r => parseInt(r.isdeleted || 0) !== 1).reduce((sum, r) => sum + (parseFloat(r.totalamount) || 0), 0)}
+            />
         </>
     );
 };

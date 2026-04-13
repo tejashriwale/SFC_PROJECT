@@ -52,7 +52,7 @@ function AddRequisition() {
 
     const [masterData, setMasterData] = useState({
         requisitionnumber: "",
-        requisitiondate: new Date().toISOString().split('T')[0],
+        requisitiondate: userdetail?.APPDT || new Date().toISOString().split('T')[0],
         enquirynumber: "",
         category: [],
         vendor: "",

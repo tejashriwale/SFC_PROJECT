@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { all_routes } from "../../Router/all_routes";
 import withReactContent from "sweetalert2-react-content";
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +11,11 @@ import { ArrowLeft } from "feather-icons-react/build/IconComponents";
 import { getUserData } from "../../Context/UserData";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import AddCropCollect_1 from "./AddCropCollect_1";
+import BillReceipt from "./BillReceipt";
 
 function AddFarmerBillDetails() {
+    const location = useLocation();
+    const navigate = useNavigate();
     const { userdetail } = getUserData();
     const [showForm, setShowForm] = useState(false);
     const [Farmers, setFarmers] = useState([]);
@@ -59,13 +62,18 @@ function AddFarmerBillDetails() {
             year: "numeric",
         });
 
+        // Payment date = APPDT minus 1 day
+        const paymentDateObj = new Date(dateToUse);
+        paymentDateObj.setDate(paymentDateObj.getDate() - 1);
+        const paymentIsoDate = paymentDateObj.toISOString().split('T')[0];
+
         // Format for HTML5 date input (YYYY-MM-DD)
         const isoDate = dateToUse.toISOString().split('T')[0];
 
         setDefaultAppDate(formattedDate);
-        setDefaultPaymentDate(isoDate);
+        setDefaultPaymentDate(paymentIsoDate);
 
-        setBillForm((prev) => ({ ...prev, appdt: formattedDate, paymentdate: isoDate }));
+        setBillForm((prev) => ({ ...prev, appdt: formattedDate, paymentdate: paymentIsoDate }));
     }, [userdetail]);
 
 
@@ -90,8 +98,6 @@ function AddFarmerBillDetails() {
             cleanupModal();
         };
     }, [location]);
-
-    const navigate = useNavigate();
     const [detailData, setDetailData] = useState([]);
     const route = all_routes;
     const farmerRef = useRef();
@@ -204,6 +210,20 @@ function AddFarmerBillDetails() {
                 farmer.phone && farmer.phone.includes(mobileSearch)
             );
             setFarmers(filtered);
+
+            // Auto-select farmer when exact 10-digit mobile match found
+            if (mobileSearch.length === 10) {
+                const exactMatch = allFarmers.find(farmer =>
+                    farmer.phone === mobileSearch
+                );
+                if (exactMatch) {
+                    setFormData(prev => ({
+                        ...prev,
+                        farmer: exactMatch.value,
+                        crop: "",
+                    }));
+                }
+            }
         }
     }, [mobileSearch, allFarmers]);
 
@@ -641,9 +661,7 @@ function AddFarmerBillDetails() {
                     NewPaidAmt = parseFloat(billForm?.paidamt) || 0;
                     NTRNSR = (parseFloat(billForm?.trnsr) || 0) + 1;
                     NTRNSID = "20";  // Payment transaction
-                    NCBAL = Math.abs(
-                        (parseFloat(DATA?.payableamt) || 0) - NewPaidAmt
-                    );
+                    NCBAL = Math.max(0, (parseFloat(DATA?.payableamt) || 0) - NewPaidAmt);
                     NREFAID = billForm?.refaid || "";
 
                     // Calculate remaining advance amount (if any)
@@ -781,7 +799,9 @@ function AddFarmerBillDetails() {
                 row.maid === (formData.farmer || "")
             );
 
-            handleProceed(ROW[0]);
+            if (ROW && ROW.length > 0) {
+                handleProceed(ROW[0]);
+            }
         } catch (err) {
             console.error("Save failed:", err);
             Swal.fire({
@@ -1597,145 +1617,16 @@ function AddFarmerBillDetails() {
 `}
             </style>
 
-            <div className="modal fade" id="print-receipt2" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered w-60" style={{ maxWidth: '550px', height: '100vh' }}>
-                    <div className="modal-content" style={{ height: '100%' }}>
-                        <div className="d-flex justify-content-end ">
-                            <button
-                                type="button"
-                                className="close p-1"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"
-                            >
-                                <span aria-hidden="true" class="fs-1">×</span>
-                            </button>
-                        </div>
-                        <div className="modal-body" style={{ height: '100%', overflowY: 'auto', fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
-                            <div style={{ border: '1px solid black', height: '100%' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '20px' }}>
-                                    <img
-                                        src="/assets/img/sfclogo.png"
-                                        alt="Logo1"
-                                        style={{ height: '80px', marginBottom: '10px', marginLeft: '1px' }}
-                                    />
-
-                                    {/* Text Section */}
-                                    <div style={{ textAlign: 'center', lineHeight: '1.4' }}>
-
-                                        <div style={{
-                                            fontSize: '20px',
-                                            fontWeight: 'bold',
-                                            letterSpacing: '0.5px',
-                                            fontFamily: 'Segoe UI, sans-serif',
-                                            // color: 'Orange'
-                                        }}>
-                                            {userdetail?.departmentname || 'शाखेचे नाव'}
-                                        </div>
-
-                                        {/* <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>
-                                            Anar & Angur Suppliers <br />
-                                            A/p- Pathare, Tal. Sinner, Dist. Nashik <br />
-                                            Pro. Swapnil Dawange - Mob. 7038130006, 7743902997
-                                        </div> */}
-                                    </div>
-                                </div>
-
-                                <table style={{ width: '100%', fontSize: '14px', marginBottom: '10px' }}>
-                                    <tbody>
-                                        <tr>
-                                            <td style={{ width: '50%' }}>
-                                                <div style={{ display: 'flex', paddingLeft: '8px' }}>
-                                                    Bill No:
-                                                    <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{billno}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', marginRight: '8px', justifyContent: 'flex-end' }}>
-                                                    Date:
-                                                    <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{Datee}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div style={{ display: 'flex', paddingLeft: '8px' }}>
-                                                    Name:
-                                                    <span style={{ paddingLeft: '8px', fontWeight: 'bold' }}>{Fname}</span>
-                                                </div>
-                                            </td>
-                                            <td style={{ textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', marginRight: '8px', justifyContent: 'flex-end' }}>
-                                                    Mobile No:
-                                                    <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{phone}</span>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <table style={{ width: '100%', borderCollapse: 'collapse', height: '60%' }}>
-                                    <thead>
-                                        <tr style={{ borderTop: '1px solid black', borderBottom: '1px solid black' }}>
-                                            <th style={{ textAlign: 'center', width: '8%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Sr.No.</th>
-                                            <th style={{ textAlign: 'center', width: '15%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Date</th>
-                                            <th style={{ textAlign: 'center', width: '15%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Crop</th>
-                                            <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Create/Box</th>
-                                            <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Rate</th>
-                                            <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Weight</th>
-                                            <th style={{ textAlign: 'center', width: '20%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {tabledata.map((item, index) => (
-                                            <tr key={index}>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{index + 1}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{convertToISODate(item.date)}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.ctype}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.cropinvert}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.rate}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.weight}</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
-                                                    {/* ₹ {(parseFloat(item.rate || 0) * parseFloat(item.weight || 0)).toFixed(2)} */}
-                                                    {(item.rate * item.weight).toFixed(2)}
-                                                </td>
-
-                                            </tr>
-                                        ))}
-
-                                        {Array.from({ length: Math.max(0, 10 - tabledata.length) }).map((_, idx) => (
-                                            <tr key={`empty-${idx}`}>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                            </tr>
-                                        ))}
-
-                                        <tr style={{ borderTop: '1px solid black', borderBottom: '1px solid black', backgroundColor: '#bfbfbf' }}>
-                                            <td colSpan="6" style={{ textAlign: 'right', fontWeight: 'bold', borderLeft: '1px solid black', borderRight: '1px solid black' }}>
-                                                Total
-                                            </td>
-                                            <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center', fontWeight: 'bold' }}>
-                                                ₹ {totalAmount.toFixed(2)}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <div className="modal-footer flex-column align-items-start w-100">
-                                    <div className="d-flex justify-content-between w-100 mt-5">
-                                        <div><strong>Customer Sign</strong></div>
-                                        <div><strong>For Shree Sai Fruits Company</strong></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <BillReceipt
+                modalId="print-receipt2"
+                billNo={billno}
+                date={Datee}
+                farmerName={Fname}
+                mobileNo={phone}
+                vehNo=""
+                tableData={tabledata}
+                totalAmount={totalAmount}
+            />
 
             <AddCropCollect_1 CROPID={selectedData.cropid} cdaid={selectedData.cdaid} />
         </div >

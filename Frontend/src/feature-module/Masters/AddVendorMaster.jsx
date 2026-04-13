@@ -908,8 +908,8 @@ const AddVendor = () => {
                                                 </div>
                                                 <div className="col-lg-4 col-sm-6 col-12">
                                                     <div className="form-label add-product">
-                                                        <label className="form-label required">{isRestricted ? "Contact person name" : "व्यक्तीचे नाव"} </label>
-                                                        <input type="text" className="form-control" required name="name"
+                                                        <label className="form-label">{isRestricted ? "Contact person name" : "व्यक्तीचे नाव"} </label>
+                                                        <input type="text" className="form-control" name="name"
                                                             value={formData.name}
                                                             ref={nameRef}
                                                             pattern="^[A-Za-z]+( [A-Za-z]+)*\s*$"

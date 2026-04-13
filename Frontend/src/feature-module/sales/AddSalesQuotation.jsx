@@ -80,7 +80,7 @@ const AddSaleQuotation = ({ SQAMAID, onRefresh }) => {
     const [formData, setFormData] = useState({
         SQAMAID: '',
         SQNO: '',
-        SQDATE: new Date().toISOString().split('T')[0], // Current date set here
+        SQDATE: userdetail?.APPDT || new Date().toISOString().split('T')[0],
         SPRNO: '',
         SQDUEDATE: '',
         SQCAID: '',
@@ -181,7 +181,7 @@ const AddSaleQuotation = ({ SQAMAID, onRefresh }) => {
                 // Reset formData
                 setFormData({
                     SQNO: '',
-                    SQDATE: new Date().toISOString().split("T")[0],
+                    SQDATE: userdetail?.APPDT || new Date().toISOString().split("T")[0],
                     SPRNO: '',
                     SQDUEDATE: '',
                     SQCAID: '',

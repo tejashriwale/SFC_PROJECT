@@ -155,6 +155,167 @@ const CropTransportInvoice = () => {
             Proceed
         </Tooltip>
     );
+    const renderReportTooltip = (props) => (
+        <Tooltip id="Report-tooltip" {...props}>
+            Customer Report
+        </Tooltip>
+    );
+
+    const formatDateToShortMonth = (dateStr) => {
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const [year, month, day] = dateStr.split("-");
+        return `${parseInt(day, 10)} ${months[parseInt(month, 10) - 1]} ${year}`;
+    };
+
+    const openCustomerReport = async (record) => {
+        try {
+            const headers = { "Content-Type": "application/json", Accept: "*/*" };
+            const response = await axios.post(`${baseUrl.Url}/backend/api/GET_CustomerLedger`, {
+                companyid: userdetail?.companyID || "",
+                deptid: userdetail?.departmentID || "",
+                refaid: record.slvmid,
+                maid: record.tradeR1,
+                sdate: "1 Jan 2000",
+                edate: "31 Dec 2099"
+            }, { headers });
+
+            const filteredRows = response.data;
+
+            let totalDebit = 0;
+            let totalCredit = 0;
+            let totalAdvance = 0;
+            let tableRows = '';
+            const vehicleBillShown = {};
+
+            filteredRows.forEach((r) => {
+                const debit = parseFloat(r.totsamt) || 0;
+                const credit = parseFloat(r.pamt) || 0;
+                const advance = parseFloat(r.advamt) || 0;
+                const balance = parseFloat(r.cbal) || 0;
+                const vehicleKey = (r.vehicleno || '') + '_' + (r.ccompanyname || '');
+
+                if (debit > 0 && !vehicleBillShown[vehicleKey]) {
+                    vehicleBillShown[vehicleKey] = true;
+                    totalDebit += debit;
+                    tableRows += `
+                    <tr>
+                        <td>${r.trndt || ''}</td>
+                        <td>${r.ccompanyname || ''}</td>
+                        <td>${r.vehicleno || ''}</td>
+                        <td>Bill Amount</td>
+                        <td style="text-align: right;">${debit.toFixed(2)}</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">${(balance + credit + advance).toFixed(2)}</td>
+                    </tr>`;
+                }
+
+                if (advance > 0) {
+                    totalAdvance += advance;
+                    tableRows += `
+                    <tr>
+                        <td>${r.trndt || ''}</td>
+                        <td>${r.ccompanyname || ''}</td>
+                        <td>${r.vehicleno || ''}</td>
+                        <td>Advance</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">${advance.toFixed(2)}</td>
+                        <td style="text-align: right;">${(balance + credit).toFixed(2)}</td>
+                    </tr>`;
+                }
+
+                if (credit > 0) {
+                    totalCredit += credit;
+                    tableRows += `
+                    <tr>
+                        <td>${r.trndt || ''}</td>
+                        <td>${r.ccompanyname || ''}</td>
+                        <td>${r.vehicleno || ''}</td>
+                        <td>Payment</td>
+                        <td style="text-align: right;">0.00</td>
+                        <td style="text-align: right;">${credit.toFixed(2)}</td>
+                        <td style="text-align: right;">${balance.toFixed(2)}</td>
+                    </tr>`;
+                }
+            });
+
+            const finalBalance = totalDebit - totalCredit - totalAdvance;
+
+            const totalRow = `
+                <tr style="font-weight: bold; background-color: #e8e8e8;">
+                    <td colspan="4" style="text-align: right; font-size: 14px;">Total:</td>
+                    <td style="text-align: right;">${totalDebit.toFixed(2)}</td>
+                    <td style="text-align: right;">${(totalCredit + totalAdvance).toFixed(2)}</td>
+                    <td style="text-align: right;">${finalBalance.toFixed(2)}</td>
+                </tr>
+            `;
+
+            const htmlContent = `
+                <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>Customer Ledger Report</title>
+                        <style>
+                            @page { size: landscape; margin: 10mm; }
+                            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #fff; }
+                            .report-container { width: 100%; max-width: 1400px; margin: 0 auto; }
+                            .company-name { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 10px; text-transform: uppercase; }
+                            .report-title { text-align: center; font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+                            .filter-info { text-align: center; font-size: 14px; margin-bottom: 20px; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
+                            th, td { border: 1.5px solid #444; padding: 10px 8px; text-align: center; }
+                            th { background-color: #d1d1d1; font-weight: bold; color: #000; }
+                            tr:hover { background-color: #f5f5f5; }
+                            .btn-container { text-align: center; margin: 20px 0; }
+                            .btn { padding: 12px 30px; background: #4a90e2; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 0 10px; }
+                            .btn:hover { background: #357abd; }
+                            @media print { .btn-container { display: none; } }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="report-container">
+                            <div class="company-name">${userdetail?.departmentname || 'SHREE SAI FRUITS COMPANY'}</div>
+                            <div class="report-title">Customer Ledger Report</div>
+                            <div class="filter-info">
+                                Customer: ${record.trader} | Vehicle: ${record.vehicleno} | Generated On: ${new Date().toLocaleString()}
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Customer Name</th>
+                                        <th>Gadi No</th>
+                                        <th>Transaction Type</th>
+                                        <th>Debit</th>
+                                        <th>Credit</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tableRows}
+                                    ${totalRow}
+                                </tbody>
+                            </table>
+                            <div class="btn-container">
+                                <button class="btn" onclick="window.print()">Print</button>
+                                <button class="btn" onclick="window.close()">Close</button>
+                            </div>
+                        </div>
+                    </body>
+                </html>
+            `;
+
+            const newWindow = window.open('', '_blank');
+            if (newWindow) {
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+            } else {
+                alert('Please allow popups for this site to view the report.');
+            }
+        } catch (error) {
+            console.error("Error fetching customer ledger:", error);
+            Swal.fire({ icon: "error", title: "Error", text: "Failed to fetch customer report." });
+        }
+    };
     const columns = [
         {
             title: "Date",
@@ -247,6 +408,20 @@ const CropTransportInvoice = () => {
 
                                 style={{ color: 'green' }}>
                                 <i data-feather="arrow-right-circle" className="feather-arrow-right-circle"></i>
+                            </Link>
+                        </OverlayTrigger>
+                        <OverlayTrigger
+                            placement="top"
+                            overlay={renderReportTooltip}
+                        >
+                            <Link className="me-2 p-2"
+                                to="#"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    openCustomerReport(record);
+                                }}
+                                style={{ color: '#4a90e2' }}>
+                                <i data-feather="file-text" className="feather-file-text"></i>
                             </Link>
                         </OverlayTrigger>
                     </div>

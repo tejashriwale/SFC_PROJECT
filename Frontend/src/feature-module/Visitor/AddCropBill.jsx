@@ -18,6 +18,7 @@ import {
     Trash2,
 } from "feather-icons-react/build/IconComponents";
 import { Weight } from "lucide-react";
+import BillReceipt from "./BillReceipt";
 const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     console.log(CROPID, cdaid, VDAID, MAID, "CROPID, cdaid, VDAID, MAID")
     // const userdetail = getUserData();
@@ -400,6 +401,7 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     }, [CROPID]);
 
     const [cropInvertDetail, setCropInvertDetail] = useState([]);
+    const [billViewMode, setBillViewMode] = useState(null); // null = full bill, object = single row data
     // const [cropInvertDetail, setCropInvertDetail] = useState({
     //     billno: "",
     //     date: "",
@@ -451,7 +453,7 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
 
 
     const getTodayDate = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const formatted = today.toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
@@ -461,7 +463,7 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     };
 
     const getTodayDate2 = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, "0");
         const dd = String(today.getDate()).padStart(2, "0");
@@ -624,7 +626,7 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     };
 
     const getTodayDate1 = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
@@ -920,6 +922,8 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     }, 0);
 
     console.log(totalAmount, "totalAmount")
+
+
     useEffect(() => {
         const printModal = document.getElementById('print-receipt1');
         if (!printModal) return;
@@ -1181,62 +1185,34 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
                                                                                                     <td className="text-center">{row.Weight}</td>
                                                                                                     <td className="text-center">{row.rate}</td>
                                                                                                     <td className="text-center">
-                                                                                                        <Link
-                                                                                                            data-feather="eye"
-                                                                                                            to="#" data-bs-toggle="modal"
-                                                                                                            data-bs-target="#print-receipt"
-                                                                                                            className="feather-eye cursor-pointer"
-                                                                                                            // onClick={() => {
-                                                                                                            //     alert(`CDAID: ${row.VehicleNo}`);
-                                                                                                            //     //vdaid cdaid
-                                                                                                            //     // or console.log(row.vdaid);
-                                                                                                            //     // or call a function like fetchVda(row.vdaid);
-                                                                                                            // }}
-                                                                                                            // onClick={async () => {
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            className="btn btn-sm btn-outline-success py-0 px-2"
+                                                                                                            onClick={() => {
+                                                                                                                const singleRowData = [{
+                                                                                                                    cratecount: row.Quantity,
+                                                                                                                    rate: row.rate,
+                                                                                                                    weight: row.Weight
+                                                                                                                }];
+                                                                                                                const singleTotal = parseFloat(row.rate || 0) * parseFloat(row.Weight || 0);
+                                                                                                                setBillViewMode({ tableData: singleRowData, totalAmount: singleTotal });
 
-                                                                                                            //     const isLoaded = await fetchbill1(row.cdaid);
-                                                                                                            //     if (isLoaded) {
-                                                                                                            //         const myModal = new window.bootstrap.Modal(document.getElementById('print-receipt'), {
-                                                                                                            //             backdrop: 'static',
-                                                                                                            //             keyboard: false,
-                                                                                                            //             focus: false
-                                                                                                            //         });
-                                                                                                            //         myModal.show();
-                                                                                                            //     } else {
-                                                                                                            //         alert("Data is not loaded.");
-                                                                                                            //     }
-                                                                                                            // }}
-
-                                                                                                            onClick={async () => {
-
-                                                                                                                const isLoaded = await fetchbill1(row.cdaid);
-                                                                                                                if (isLoaded) {
-                                                                                                                    const myModal = new window.bootstrap.Modal(document.getElementById('print-receipt'), {
-                                                                                                                        backdrop: 'static',
-                                                                                                                        keyboard: false,
-                                                                                                                        focus: false
-                                                                                                                    });
-                                                                                                                    myModal.show();
-                                                                                                                } else {
-                                                                                                                    alert("Data is not loaded.");
-                                                                                                                }
-                                                                                                                // 1. Fetch data and open the modal
-                                                                                                                // openModal(record.cropid, record.cdaid);
-
-                                                                                                                // 2. Add the temporary class to the body for styling
-                                                                                                                document.body.classList.add('force-landscape-view');
-
-                                                                                                                // 3. Optional: Add an event listener to clean up the class when the modal closes
-                                                                                                                const modalElement = document.getElementById('print-receipt');
+                                                                                                                const modalElement = document.getElementById('print-receipt1');
                                                                                                                 if (modalElement) {
-                                                                                                                    // Ensure the cleanup happens ONLY after the modal is hidden
+                                                                                                                    const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
+                                                                                                                    modal.show();
+
+                                                                                                                    document.body.classList.add('force-landscape-view');
                                                                                                                     modalElement.addEventListener('hidden.bs.modal', function handler() {
                                                                                                                         document.body.classList.remove('force-landscape-view');
+                                                                                                                        setBillViewMode(null);
                                                                                                                         modalElement.removeEventListener('hidden.bs.modal', handler);
                                                                                                                     }, { once: true });
                                                                                                                 }
                                                                                                             }}
-                                                                                                        ></Link>
+                                                                                                        >
+                                                                                                            View Bill
+                                                                                                        </button>
                                                                                                     </td>
 
                                                                                                 </tr>
@@ -1427,10 +1403,8 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
 
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        // 1. Fetch data and open the modal
+                                                                        setBillViewMode(null);
                                                                         openModal(CROPID);
-
-                                                                        // 2. Add the temporary class to the body for styling
                                                                         document.body.classList.add('force-landscape-view');
 
                                                                         // 3. Optional: Add an event listener to clean up the class when the modal closes
@@ -1706,289 +1680,16 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
                         }
                         `}
                 </style>
-                <div className="modal fade" id="print-receipt" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div className="modal-dialog modal-dialog-centered w-100" style={{ maxWidth: '550px', height: '100vh' }}>
-                        <div className="modal-content" style={{ height: '100%' }}>
-                            <div className="d-flex justify-content-end ">
-                                <button
-                                    type="button"
-                                    className="close p-0"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"
-                                >
-                                    <span aria-hidden="true" class="fs-1 ">×</span>
-                                </button>
-                            </div>
-                            <div className="modal-body" style={{ height: '100%', overflowY: 'auto', fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
-                                <div style={{ border: '1px solid black', minHeight: '80%' }}>
-                                    <div className="p-0" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '20px' }}>
-                                        <img
-                                            src="/assets/img/sfclogo.png"
-                                            alt="Logo1"
-                                            style={{ height: '80px', marginBottom: '8px', marginLeft: '8px' }}
-                                        />
-
-                                        {/* Text Section */}
-                                        <div style={{ textAlign: 'center', lineHeight: '1.4' }}>
-
-                                            <div style={{
-                                                fontSize: '20px',
-                                                fontWeight: 'bold',
-                                                letterSpacing: '0.5px',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                // color: 'Orange'
-                                            }}>
-                                                {userdetail?.departmentname || 'शाखेचे नाव'}
-                                            </div>
-
-                                            {/* <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>
-                                                Anar & Angur Suppliers <br />
-                                                A/p- Pathare, Tal. Sinner, Dist. Nashik <br />
-                                                Pro. Swapnil Dawange - Mob. 7038130006, 7743902997
-                                            </div> */}
-                                        </div>
-                                    </div>
-
-                                    <table style={{ width: '100%', fontSize: '14px', marginBottom: '10px' }}>
-                                        <tbody>
-                                            {cropInvertDetail.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td style={{ width: '50%' }}>
-                                                        <div style={{ display: 'flex' }}>
-                                                            Bill No:
-                                                            <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{item.billno}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                            Date:
-                                                            <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{item.shsdate}</span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {cropInvertDetail.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <div style={{ display: 'flex' }}>
-                                                            Name:
-                                                            <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{item.farmername}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                            Mobile No:
-                                                            <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{item.contactno}</span>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', height: '30%' }}>
-                                        <thead>
-                                            <tr style={{ borderTop: '1px solid black', borderBottom: '1px solid black' }}>
-                                                <th style={{ textAlign: 'center', width: '6%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Sr.No.</th>
-                                                <th style={{ textAlign: 'center', width: '17%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Date</th>
-                                                <th style={{ textAlign: 'center', width: '18%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Crop</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Crate/Box</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Rate</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Weight</th>
-                                                <th style={{ textAlign: 'center', width: '20%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {cropInvertDetail.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{index + 1}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{convertToISODate(item.shsdate)}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.itemne}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.cratecount}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.rate}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.weight}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
-                                                        ₹ {(parseFloat(item.rate || 0) * parseFloat(item.weight || 0)).toFixed(2)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-
-                                            {Array.from({ length: Math.max(0, 12 - tabledata.length) }).map((_, idx) => (
-                                                <tr key={`empty-${idx}`}>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                </tr>
-                                            ))}
-
-                                            {cropInvertDetail.map((item, index) => (
-                                                <tr key={index} style={{ borderBottom: '1px solid black', borderTop: '1px solid black', backgroundColor: '#bfbfbf' }}>
-                                                    <td colSpan="6" style={{ textAlign: 'right', fontWeight: 'bold', borderLeft: '1px solid black', borderRight: '1px solid black' }}>
-                                                        Total
-                                                    </td>
-
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center', fontWeight: 'bold' }}>
-                                                        ₹ {(item.amount).toFixed(2)}
-                                                        {/* ₹ {totalAmount.toFixed(2)} */}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-
-                                    <div className="modal-footer flex-column align-items-start w-100 ">
-                                        <div className="d-flex justify-content-between w-100 mt-5">
-                                            <div><strong>Customer Sign</strong></div>
-                                            <div><strong>For Shree Sai Fruits Company</strong></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="modal fade" id="print-receipt1" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                    <div className="modal-dialog modal-dialog-centered w-100" style={{ maxWidth: '550px', height: '100vh' }}>
-                        <div className="modal-content" style={{ height: '100%' }}>
-                            <div className="d-flex justify-content-end ">
-                                <button
-                                    type="button"
-                                    className="close p-1"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"
-                                >
-                                    <span aria-hidden="true" class="fs-1">×</span>
-                                </button>
-                            </div>
-                            <div className="modal-body" style={{ height: '100%', overflowY: 'auto', fontFamily: 'Noto Sans Devanagari, sans-serif' }}>
-                                <div style={{ border: '1px solid black', height: '95%' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '20px' }}>
-                                        <img
-                                            src="/assets/img/sfclogo.png"
-                                            alt="Logo1"
-                                            style={{ height: '80px', marginBottom: '10px', marginLeft: '8px' }}
-                                        />
-
-                                        {/* Text Section */}
-                                        <div style={{ textAlign: 'center', lineHeight: '1.4' }}>
-
-                                            <div style={{
-                                                fontSize: '20px',
-                                                fontWeight: 'bold',
-                                                letterSpacing: '0.5px',
-                                                fontFamily: 'Segoe UI, sans-serif',
-                                                // color: 'Orange'
-                                            }}>
-                                                {userdetail?.departmentname || 'शाखेचे नाव'}
-                                            </div>
-
-                                            {/* <div style={{ fontsize: '14px', fontWeight: 'bold', marginBottom: '4px' }}>
-                                                Anar & Angur Suppliers <br />
-                                                A/p- Pathare, Tal. Sinner, Dist. Nashik <br />
-                                                Pro. Swapnil Dawange - Mob. 7038130006, 7743902997
-                                            </div> */}
-                                        </div>
-                                    </div>
-
-                                    <table style={{ width: '100%', fontSize: '14px', marginBottom: '10px' }}>
-                                        <tbody>
-                                            <tr>
-                                                <td style={{ width: '50%' }}>
-                                                    <div style={{ display: 'flex' }}>
-                                                        Bill No:
-                                                        <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{BillNo}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                        Date:
-                                                        <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{Date123}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div style={{ display: 'flex' }}>
-                                                        Name:
-                                                        <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{farmeName}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ textAlign: 'right' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                                                        Mobile No:
-                                                        <span style={{ paddingLeft: '5px', fontWeight: 'bold' }}>{MoblieNo}</span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', height: '60%' }}>
-                                        <thead>
-                                            <tr style={{ borderTop: '1px solid black', borderBottom: '1px solid black' }}>
-                                                <th style={{ textAlign: 'center', width: '6%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Sr.No.</th>
-                                                <th style={{ textAlign: 'center', width: '17%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Date</th>
-                                                <th style={{ textAlign: 'center', width: '18%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Crop</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Crate/Box</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Rate</th>
-                                                <th style={{ textAlign: 'center', width: '10%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Weight</th>
-                                                <th style={{ textAlign: 'center', width: '20%', borderLeft: '1px solid black', borderRight: '1px solid black', backgroundColor: '#bfbfbf' }}>Amount</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tabledata.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{index + 1}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{convertToISODate(item.date)}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.ctype}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.cratecount}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.rate}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>{item.weight}</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center' }}>
-                                                        ₹ {(parseFloat(item.rate || 0) * parseFloat(item.weight || 0)).toFixed(2)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-
-                                            {Array.from({ length: Math.max(0, 12 - tabledata.length) }).map((_, idx) => (
-                                                <tr key={`empty-${idx}`}>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                    <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black' }}>&nbsp;</td>
-                                                </tr>
-                                            ))}
-
-                                            <tr className="mb-5" style={{ borderTop: '1px solid black', borderBottom: '1px solid black', backgroundColor: '#bfbfbf' }}>
-                                                <td colSpan="6" style={{ textAlign: 'right', fontWeight: 'bold', borderLeft: '1px solid black', borderRight: '1px solid black' }}>
-                                                    Total
-                                                </td>
-                                                <td style={{ borderLeft: '1px solid black', borderRight: '1px solid black', textAlign: 'center', fontWeight: 'bold' }}>
-                                                    ₹ {totalAmount.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-
-                                    <div className="modal-footer flex-column align-items-start w-100">
-                                        <div className="d-flex justify-content-between w-100 mt-5">
-                                            <div><strong>Customer Sign</strong></div>
-                                            <div><strong>For Shree Sai Fruits Company</strong></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <BillReceipt
+                    modalId="print-receipt1"
+                    billNo={BillNo}
+                    date={Date123}
+                    farmerName={farmeName}
+                    mobileNo={MoblieNo}
+                    vehNo={tabledata.length > 0 ? (tabledata[0].vehno || '') : ''}
+                    tableData={billViewMode ? billViewMode.tableData : tabledata}
+                    totalAmount={billViewMode ? billViewMode.totalAmount : totalAmount}
+                />
             </>
 
         </>

@@ -15,5 +15,6 @@
         public double TOTEX { get; set; }
         public double TOTIWDAMT { get; set; }
         public string LDATE { get; set; }
+        public string PONO { get; set; }
     }
 }

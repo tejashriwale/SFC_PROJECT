@@ -44,7 +44,7 @@ const AddCropInvert = ({ VDAID, FAID, SHAID, onRefresh }) => {
         getTodayDate();
     }, [SHAID,]);
     const getTodayDate = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const formatted = today.toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
@@ -53,7 +53,7 @@ const AddCropInvert = ({ VDAID, FAID, SHAID, onRefresh }) => {
         setEndDate(formatted);
     };
     const getTodayDate2 = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, "0");
         const dd = String(today.getDate()).padStart(2, "0");
@@ -471,6 +471,13 @@ const AddCropInvert = ({ VDAID, FAID, SHAID, onRefresh }) => {
 
 
     const getTodayDate1 = () => {
+        if (userdetail?.APPDT) {
+            const d = new Date(userdetail.APPDT);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');

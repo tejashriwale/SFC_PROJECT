@@ -527,22 +527,81 @@ function ReportsInd() {
 
         try {
             const response = await axios.post(`${baseUrl.Url}/backend/api/GET_CustomerLedger`, {
-                // ctaid: "%",
                 companyid: userdetail?.companyID || "",
                 deptid: userdetail?.departmentID || "",
                 refaid: "%",
                 maid: selectedCustomer,
                 edate: formatToShortDate(endDate),
                 sdate: formatToShortDate(startDate)
-                // level: "%"
             });
 
             const data = response.data;
-            console.log(data, "1111111111111111111111111111111111111111111")
+            console.log(data, "CustomerLedger data");
 
-            generateCustomerReport(data, selectedCustomer1);
+            // Fetch detail data for each unique refaid to get crop, quantity, weight info
+            const uniqueRefaids = [...new Set(data.map(r => r.refaid).filter(Boolean))];
+            const detailMap = {};
+            const headers = { "Content-Type": "application/json", Accept: "*/*" };
+
+            await Promise.all(uniqueRefaids.map(async (refaid) => {
+                try {
+                    const detailRes = await axios.post(
+                        `${baseUrl.Url}/backend/api/GET_StockLoadingVehicleDetail`,
+                        {
+                            svvmid: refaid,
+                            companyid: userdetail?.companyID || "",
+                            deptid: userdetail?.departmentID || ""
+                        },
+                        { headers }
+                    );
+                    if (detailRes.data && detailRes.data.length > 0) {
+                        const details = detailRes.data;
+                        const cropNames = [...new Set(details.map(d => d.cropname).filter(Boolean))].join(', ');
+                        const totalCrt = details.reduce((s, d) => s + (parseFloat(d.count) || 0), 0);
+                        const totalCharges = details.reduce((s, d) => s + (parseFloat(d.charges) || 0), 0);
+                        // Quantity/Kg = sum of totalamount for each detail (totalamount = count * rate = weight in value)
+                        // Weight per SKU = if totalamount and rate available, qtykg = totalamount/rate per row, then weight = qtykg/count
+                        let totalQtyKg = 0;
+                        details.forEach(d => {
+                            const cnt = parseFloat(d.count) || 0;
+                            const rate = parseFloat(d.rate) || 0;
+                            const totAmt = parseFloat(d.totalamount) || 0;
+                            if (rate > 0) {
+                                totalQtyKg += totAmt / rate;
+                            } else {
+                                totalQtyKg += cnt;
+                            }
+                        });
+                        const weightPerSku = totalCrt > 0 ? (totalQtyKg / totalCrt) : 0;
+                        detailMap[refaid] = {
+                            cropname: cropNames,
+                            wtpersku: weightPerSku,
+                            qtycrt: totalCrt,
+                            qtykg: totalQtyKg,
+                            pcharges: totalCharges
+                        };
+                    }
+                } catch (err) {
+                    console.error("Error fetching detail for refaid:", refaid, err);
+                }
+            }));
+
+            // Merge detail data into ledger rows
+            const enrichedData = data.map(r => {
+                const detail = detailMap[r.refaid] || {};
+                return {
+                    ...r,
+                    cropname: r.cropname || detail.cropname || '',
+                    wtpersku: r.wtpersku || detail.wtpersku || 0,
+                    qtycrt: r.qtycrt || detail.qtycrt || 0,
+                    qtykg: r.qtykg || detail.qtykg || 0,
+                    pcharges: r.pcharges || detail.pcharges || 0,
+                };
+            });
+
+            generateCustomerReport(enrichedData, selectedCustomer1);
         } catch (error) {
-            console.error("Error fetching Profit Loss data:", error);
+            console.error("Error fetching Customer Ledger data:", error);
         }
     };
 
@@ -658,6 +717,30 @@ function ReportsInd() {
                         </tr>
                     </tfoot>
                 </table>
+                <div class="btn-container" style="text-align:center;margin:20px 0;">
+                    <button onclick="window.print()" style="padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Print</button>
+                    <button onclick="downloadPDF('CropTransportList')" style="padding:10px 28px;background:#198754;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Download PDF</button>
+                    <button onclick="window.close()" style="padding:10px 28px;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Close</button>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script>
+                function downloadPDF(name) {
+                    var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                    html2canvas(document.body, {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                        var pdf = new jspdf.jsPDF('l','mm','a4');
+                        var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                        var iw = pw, ih = canvas.height*iw/canvas.width;
+                        if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                        else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                        while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                        pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                        if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                        pos+=sl;rem-=sl;}}
+                        pdf.save(name+'_Report.pdf'); btns.style.display='';
+                    }).catch(function(){btns.style.display='';});
+                }
+                </script>
             </body>
             </html>
             `;
@@ -743,6 +826,30 @@ function ReportsInd() {
                       </tfoot>
 
                     </table>
+                <div class="btn-container" style="text-align:center;margin:20px 0;">
+                    <button onclick="window.print()" style="padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Print</button>
+                    <button onclick="downloadPDF('TotalPurchase')" style="padding:10px 28px;background:#198754;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Download PDF</button>
+                    <button onclick="window.close()" style="padding:10px 28px;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Close</button>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script>
+                function downloadPDF(name) {
+                    var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                    html2canvas(document.body, {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                        var pdf = new jspdf.jsPDF('l','mm','a4');
+                        var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                        var iw = pw, ih = canvas.height*iw/canvas.width;
+                        if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                        else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                        while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                        pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                        if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                        pos+=sl;rem-=sl;}}
+                        pdf.save(name+'_Report.pdf'); btns.style.display='';
+                    }).catch(function(){btns.style.display='';});
+                }
+                </script>
                 </body>
             </html>
         `;
@@ -821,6 +928,30 @@ function ReportsInd() {
                         </tfoot>
 
                     </table>
+                <div class="btn-container" style="text-align:center;margin:20px 0;">
+                    <button onclick="window.print()" style="padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Print</button>
+                    <button onclick="downloadPDF('SalesReport')" style="padding:10px 28px;background:#198754;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Download PDF</button>
+                    <button onclick="window.close()" style="padding:10px 28px;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Close</button>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script>
+                function downloadPDF(name) {
+                    var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                    html2canvas(document.body, {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                        var pdf = new jspdf.jsPDF('l','mm','a4');
+                        var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                        var iw = pw, ih = canvas.height*iw/canvas.width;
+                        if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                        else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                        while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                        pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                        if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                        pos+=sl;rem-=sl;}}
+                        pdf.save(name+'_Report.pdf'); btns.style.display='';
+                    }).catch(function(){btns.style.display='';});
+                }
+                </script>
                 </body>
             </html>
         `;
@@ -894,11 +1025,35 @@ function ReportsInd() {
                             <tr>
                                 <td colspan="3" class="text-right-bold">Total:</td>
                                   <td class="text-right bold">${total_totcaretcount1.toLocaleString('hi-IN')}</td>  
-                                <td class="text-right bold">${total_totsamt1.toLocaleString('hi-IN')}</td>                    
+                                <td class="text-right bold">${total_totsamt1.toLocaleString('hi-IN')}</td>
                             </tr>
                         </tfoot>
 
                     </table>
+                <div class="btn-container" style="text-align:center;margin:20px 0;">
+                    <button onclick="window.print()" style="padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Print</button>
+                    <button onclick="downloadPDF('SalesUpdated')" style="padding:10px 28px;background:#198754;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Download PDF</button>
+                    <button onclick="window.close()" style="padding:10px 28px;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Close</button>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script>
+                function downloadPDF(name) {
+                    var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                    html2canvas(document.body, {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                        var pdf = new jspdf.jsPDF('l','mm','a4');
+                        var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                        var iw = pw, ih = canvas.height*iw/canvas.width;
+                        if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                        else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                        while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                        pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                        if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                        pos+=sl;rem-=sl;}}
+                        pdf.save(name+'_Report.pdf'); btns.style.display='';
+                    }).catch(function(){btns.style.display='';});
+                }
+                </script>
                 </body>
             </html>
         `;
@@ -986,12 +1141,36 @@ function ReportsInd() {
                                 <td class="text-right bold">${total_totexpence.toLocaleString('hi-IN')}</td> 
                                 <td class="text-right bold">${total_purchase_amount.toLocaleString('hi-IN')}</td> 
                                 <td class="text-right bold">${total_svamount.toLocaleString('hi-IN')}</td> 
-                                <td class="text-right bold">${total_profit.toLocaleString('hi-IN')}</td> 
-                                                  
+                                <td class="text-right bold">${total_profit.toLocaleString('hi-IN')}</td>
+
                             </tr>
                         </tfoot>
 
                     </table>
+                <div class="btn-container" style="text-align:center;margin:20px 0;">
+                    <button onclick="window.print()" style="padding:10px 28px;background:#3b82f6;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Print</button>
+                    <button onclick="downloadPDF('ProfitLoss')" style="padding:10px 28px;background:#198754;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Download PDF</button>
+                    <button onclick="window.close()" style="padding:10px 28px;background:#ef4444;color:#fff;border:none;border-radius:5px;cursor:pointer;font-size:14px;font-weight:600;margin:0 8px;">Close</button>
+                </div>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                <script>
+                function downloadPDF(name) {
+                    var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                    html2canvas(document.body, {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                        var pdf = new jspdf.jsPDF('l','mm','a4');
+                        var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                        var iw = pw, ih = canvas.height*iw/canvas.width;
+                        if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                        else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                        while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                        pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                        if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                        pos+=sl;rem-=sl;}}
+                        pdf.save(name+'_Report.pdf'); btns.style.display='';
+                    }).catch(function(){btns.style.display='';});
+                }
+                </script>
                 </body>
             </html>
         `;
@@ -1002,81 +1181,303 @@ function ReportsInd() {
     };
 
     const generateCustomerReport = (data, selectedCustomer1) => {
-        // Use original API data directly
         const rows = data;
+        const fmtNum = (v) => {
+            const n = parseFloat(v) || 0;
+            return n === 0 ? '' : n.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        };
 
-        // Calculate totals
-        // const total_totcaretcount = rows.reduce((sum, r) => sum + Number(r.crtcnt), 0);
-        // const total_totexpence = rows.reduce((sum, r) => sum + Number(r.totex), 0);
-        // const total_purchase_amount = rows.reduce((sum, r) => sum + (r.totiwdamt), 0);
-        // const total_svamount = rows.reduce((sum, r) => sum + (r.totsamt), 0);
-        // // Calculate total profit dynamically from all rows
-        // const total_profit = rows.reduce((sum, r) => sum + ((r.totsamt || 0) - ((r.totex || 0) + (r.totiwdamt || 0))), 0);
+        // Build a map: for each refaid, find the payment date (trndt of the payment row)
+        const releaseDateMap = {};
+        rows.forEach(r => {
+            const pmt = parseFloat(r.pamt) || 0;
+            if (pmt > 0 && r.refaid) {
+                releaseDateMap[r.refaid] = r.trndt || '';
+            }
+        });
 
+        let totalPurchase = 0;
+        let totalPayment = 0;
+        let totalPCharges = 0;
+        const billShown = {};
+        let tableRows = '';
 
-        const htmlRows = rows.map((r) => `
-           
-            <tr>
-                <td class="text-center">${r.trndt || ''}</td> 
-                <td class="text-right">${r.totsamt || ''}</td>
-                <td class="text-right">${r.pamt || ''}</td>  
-                <td class="text-right">${r.cbal || 0}</td>             
-                             
-            </tr>
-        `).join('');
+        rows.forEach((r) => {
+            const purchase = parseFloat(r.totsamt) || 0;
+            const payment = parseFloat(r.pamt) || 0;
+            const advance = parseFloat(r.advamt) || 0;
+            const pcharges = parseFloat(r.pcharges) || 0;
+            const refKey = r.refaid || '';
+            const isBillRow = purchase > 0 && !billShown[refKey];
+
+            if (isBillRow) {
+                billShown[refKey] = true;
+                totalPurchase += purchase;
+                totalPCharges += pcharges;
+            }
+            totalPayment += payment + advance;
+
+            // Show bill row with all detail columns
+            if (isBillRow) {
+                const releaseDate = releaseDateMap[refKey] || r.releasedate || '';
+                tableRows += `
+                <tr>
+                    <td>${r.trndt || ''}</td>
+                    <td>${r.vehicleno || ''}</td>
+                    <td class="name">${r.ccompanyname || ''}</td>
+                    <td>${r.cropname || ''}</td>
+                    <td class="num">${fmtNum(r.wtpersku)}</td>
+                    <td class="num">${fmtNum(r.qtycrt)}</td>
+                    <td class="num">${fmtNum(r.qtykg)}</td>
+                    <td class="num">${fmtNum(purchase)}</td>
+                    <td class="num">${fmtNum(payment + advance)}</td>
+                    <td>${releaseDate}</td>
+                </tr>`;
+            } else if (payment > 0 || advance > 0) {
+                // Payment/Advance row - show only date, name, payment, release date
+                tableRows += `
+                <tr>
+                    <td>${r.trndt || ''}</td>
+                    <td>${r.vehicleno || ''}</td>
+                    <td class="name">${r.ccompanyname || ''}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="num">${fmtNum(payment + advance)}</td>
+                    <td>${r.trndt || ''}</td>
+                </tr>`;
+            }
+        });
+
+        const payable = totalPurchase - totalPayment;
 
         const htmlContent = `
             <html>
                 <head>
                     <meta charset="UTF-8">
-                    <title>Customer Ledger</title>   
+                    <title>Customer Ledger Report</title>
                     <style>
-                        @page { size: A4 portrait; margin: 5mm; }
-                        body { font-family: 'Noto Sans Devanagari', sans-serif; margin: 0 auto; padding: 20px; max-width: 300mm; }
-                        .center { text-align: center; }
-                        .title { font-size: 22px; font-weight: bold; margin-top:3mm; }
-                        .subtitle { font-size: 16px; margin-top: 6px; margin-bottom: 12px; }
-                        table { width: 100%; font-size: 15px; border-collapse: collapse; }
-                        th, td { padding: 6px 8px; border: 1px solid #ddd; vertical-align: top; }
-                        th { background-color: rgba(223, 223, 223, 0.93);  }
-                        .text-right { text-align: right; }
-                        .bold { font-weight: bold; }
-                        tfoot td { font-weight: bold; text-align: right;  }
+                        @page { size: A4 landscape; margin: 8mm; }
+                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        body {
+                            font-family: 'Segoe UI', Arial, sans-serif;
+                            padding: 15px;
+                            background: #fff;
+                            color: #222;
+                        }
+                        .report-container { width: 100%; max-width: 1400px; margin: 0 auto; }
+                        .header {
+                            text-align: center;
+                            border-bottom: 3px double #333;
+                            padding-bottom: 10px;
+                            margin-bottom: 12px;
+                        }
+                        .company-name {
+                            font-size: 26px;
+                            font-weight: 800;
+                            text-transform: uppercase;
+                            letter-spacing: 1.5px;
+                        }
+                        .report-title {
+                            font-size: 18px;
+                            font-weight: 700;
+                            margin-top: 4px;
+                            color: #444;
+                        }
+                        .filter-bar {
+                            display: flex;
+                            justify-content: space-between;
+                            background: #f4f6f8;
+                            border: 1px solid #d0d5dd;
+                            border-radius: 6px;
+                            padding: 8px 16px;
+                            margin-bottom: 12px;
+                            font-size: 13px;
+                        }
+                        .filter-bar .label { color: #666; font-weight: 500; }
+                        .filter-bar .value { color: #1a1a1a; font-weight: 700; margin-left: 4px; }
+
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                        thead th {
+                            background: #2c3e50;
+                            color: #fff;
+                            font-weight: 700;
+                            padding: 8px 6px;
+                            border: 1px solid #1a252f;
+                            text-align: center;
+                            white-space: nowrap;
+                            font-size: 11.5px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.3px;
+                        }
+                        tbody td {
+                            padding: 6px;
+                            border: 1px solid #ccc;
+                            text-align: center;
+                            vertical-align: middle;
+                        }
+                        tbody tr:nth-child(even) { background: #f9fafb; }
+                        tbody tr:hover { background: #eef3f8; }
+                        .name { text-align: left; font-weight: 500; }
+                        .num { text-align: right; font-family: 'Consolas', 'Courier New', monospace; }
+
+                        .summary-box {
+                            margin-top: 16px;
+                            border: 2px solid #2c3e50;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            width: 380px;
+                            margin-left: auto;
+                        }
+                        .summary-box .s-title {
+                            background: #2c3e50;
+                            color: #fff;
+                            padding: 8px 16px;
+                            font-weight: 700;
+                            font-size: 14px;
+                            text-align: center;
+                        }
+                        .summary-box table { margin: 0; font-size: 14px; }
+                        .summary-box table td {
+                            padding: 8px 16px;
+                            border: none;
+                            border-bottom: 1px solid #e5e7eb;
+                        }
+                        .summary-box .s-label { text-align: left; font-weight: 600; color: #333; }
+                        .summary-box .s-value { text-align: right; font-weight: 700; font-family: 'Consolas', monospace; font-size: 14px; }
+                        .summary-box .s-purchase .s-value { color: #b91c1c; }
+                        .summary-box .s-payment .s-value { color: #15803d; }
+                        .summary-box .s-payable {
+                            background: #eff6ff;
+                        }
+                        .summary-box .s-payable .s-label { font-size: 15px; color: #1e40af; }
+                        .summary-box .s-payable .s-value { font-size: 16px; color: #1e40af; font-weight: 800; }
+
+                        .btn-container { text-align: center; margin: 20px 0; }
+                        .btn {
+                            padding: 10px 28px;
+                            color: #fff;
+                            border: none;
+                            border-radius: 5px;
+                            cursor: pointer;
+                            font-size: 14px;
+                            font-weight: 600;
+                            margin: 0 8px;
+                        }
+                        .btn-print { background: #3b82f6; }
+                        .btn-print:hover { background: #2563eb; }
+                        .btn-close { background: #ef4444; }
+                        .btn-close:hover { background: #dc2626; }
+
+                        @media print {
+                            @page { size: A4 landscape; margin: 5mm; }
+                            body { padding: 0; }
+                            .btn-container { display: none; }
+                            .report-container { max-width: none; }
+                            table { font-size: 10.5px; page-break-inside: auto; }
+                            tr { page-break-inside: avoid; }
+                            thead th { padding: 5px 4px; font-size: 9.5px; }
+                            tbody td { padding: 4px; }
+                            .company-name { font-size: 22px; }
+                            .report-title { font-size: 16px; }
+                            .summary-box { page-break-inside: avoid; }
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="center title">${userdetail?.departmentname || 'दी जय मातादी फ्रूट कंपनी'}</div>
-                    
-                    <div class="center title">Customer Ledger</div>
-                    <div class="center subtitle">Duration: ${formatDateToShortMonth(startDate)} <b>To</b> ${formatDateToShortMonth(endDate)} </div>
-                    <div class="text-left" style="margin-bottom: 10px;"><b>Customer Name : </b>${selectedCustomer1}</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="min-width: 40px;">Date</th>     
-                                <th style="min-width: 40px;">sales value</th>                          
-                                <th style="min-width: 40px;">Payment</th>
-                                <th style="min-width: 40px;">Balance</th>                                
-                              
+                    <div class="report-container">
+                        <div class="header">
+                            <div class="company-name">${userdetail?.departmentname || 'SHREE SAI FRUITS COMPANY'}</div>
+                            <div class="report-title">Customer Ledger Report</div>
+                        </div>
+                        <div class="filter-bar">
+                            <div>
+                                <span class="label">Customer:</span><span class="value">${selectedCustomer1 || 'All Customers'}</span>
+                            </div>
+                            <div>
+                                <span class="label">Duration:</span><span class="value">${formatDateToShortMonth(startDate)} To ${formatDateToShortMonth(endDate)}</span>
+                            </div>
+                            <div>
+                                <span class="label">Generated:</span><span class="value">${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                        </div>
 
-                                
-                            </tr>
-                        </thead>
-                        <tbody> 
-                            ${htmlRows}
-                        </tbody>
-                       <tfoot style="border: 1px solid black">
-                           
-                        </tfoot>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Vehicle No</th>
+                                    <th>Farmer Name</th>
+                                    <th>Variety</th>
+                                    <th>Weight</th>
+                                    <th>Quantity/Crt</th>
+                                    <th>Quantity/Kg</th>
+                                    <th>Purchase Amount</th>
+                                    <th>Payment</th>
+                                    <th>Release Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
 
-                    </table>
+                        <div class="summary-box">
+                            <div class="s-title">Summary</div>
+                            <table>
+                                <tr class="s-purchase">
+                                    <td class="s-label">Purchase</td>
+                                    <td class="s-value">${totalPurchase.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                </tr>
+                                <tr class="s-payment">
+                                    <td class="s-label">Payment Release</td>
+                                    <td class="s-value">${totalPayment.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                </tr>
+                                <tr class="s-payable">
+                                    <td class="s-label">Payable</td>
+                                    <td class="s-value">${payable.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="btn-container">
+                            <button class="btn btn-print" onclick="window.print()">Print</button>
+                            <button class="btn" style="background:#198754;" onclick="downloadPDF('CustomerLedger')">Download PDF</button>
+                            <button class="btn btn-close" onclick="window.close()">Close</button>
+                        </div>
+                    </div>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+                    <script>
+                    function downloadPDF(name) {
+                        var btns = document.querySelector('.btn-container'); btns.style.display='none';
+                        html2canvas(document.querySelector('.report-container'), {scale:2, useCORS:true, backgroundColor:'#fff'}).then(function(canvas) {
+                            var pdf = new jspdf.jsPDF('l','mm','a4');
+                            var pw = pdf.internal.pageSize.getWidth()-10, ph = pdf.internal.pageSize.getHeight()-10;
+                            var iw = pw, ih = canvas.height*iw/canvas.width;
+                            if(ih<=ph){pdf.addImage(canvas.toDataURL('image/png'),'PNG',5,5,iw,ih);}
+                            else{var rem=canvas.height,pos=0,sl=Math.floor(canvas.width*ph/iw);
+                            while(rem>0){var pc=document.createElement('canvas');pc.width=canvas.width;pc.height=Math.min(sl,rem);
+                            pc.getContext('2d').drawImage(canvas,0,pos,canvas.width,pc.height,0,0,canvas.width,pc.height);
+                            if(pos>0)pdf.addPage();pdf.addImage(pc.toDataURL('image/png'),'PNG',5,5,iw,pc.height*iw/canvas.width);
+                            pos+=sl;rem-=sl;}}
+                            pdf.save(name+'_Report.pdf'); btns.style.display='';
+                        }).catch(function(){btns.style.display='';});
+                    }
+                    </script>
                 </body>
             </html>
         `;
 
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+            newWindow.document.write(htmlContent);
+            newWindow.document.close();
+        } else {
+            alert('Please allow popups for this site to view the report.');
+        }
     };
 
     const fetchFarmerLedgerReport = async () => {
@@ -1289,12 +1690,12 @@ function ReportsInd() {
                     <div className="page-title">
                         <h3>List of Statements</h3>
                     </div>
-                    {/* <div className="page-btn">
-                        <Link to={route.ReportIndex} className="btn btn-secondary">
+                    <div className="page-btn">
+                        <Link to="/MasterIndex" className="btn btn-secondary">
                             <ArrowLeft className="me-2" />
                             Back
                         </Link>
-                    </div> */}
+                    </div>
                 </div>
 
                 <div className='row'>

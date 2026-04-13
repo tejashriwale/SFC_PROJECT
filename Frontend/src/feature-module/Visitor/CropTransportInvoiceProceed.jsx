@@ -64,7 +64,7 @@ const CropTransportInvoiceProceed = ({ STATUS, TREDER, onRefresh, SLVMID, onSave
         return () => window.removeEventListener('resize', handleResize);
     }, []);
     useEffect(() => {
-        if (SLVMID != "") {
+        if (SLVMID) {
             const fetchData = async () => {
                 try {
                     const payload1 = {

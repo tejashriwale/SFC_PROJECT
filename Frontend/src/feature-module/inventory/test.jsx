@@ -72,6 +72,10 @@ function Test() {
 
     ];
 
+    const reportsData = [
+        { title: isRestricted ? "Reports" : 'माहिती पत्रके', image: 'assets/img/avatar/reportS.png', path: '/SfcReports', access: 'SFCREPORT' },
+    ];
+
     const accessPolicy = userdetail?.accessPolicy || [];
     const normalizedAccess = Array.isArray(accessPolicy)
         ? accessPolicy.map(a => a.toUpperCase())
@@ -81,6 +85,10 @@ function Test() {
     );
 
     const visibleCards1 = cardsData1.filter(card =>
+        normalizedAccess.includes(card.access.toUpperCase())
+    );
+
+    const visibleReports = reportsData.filter(card =>
         normalizedAccess.includes(card.access.toUpperCase())
     );
 
@@ -140,6 +148,44 @@ function Test() {
                         </div>
                     ) : (
                         visibleCards1.map((card, index) => (
+                            <div
+                                className="col-6 col-sm-6 col-md-4 col-lg-2 col-xxl-2 mb-3"
+                                key={index}
+                            >
+                                <div
+                                    className="card text-center"
+                                    style={{
+                                        borderRadius: '20px',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => navigate(card.path)}>
+                                    <div className="card-header border-bottom-0 pb-0"></div>
+                                    <div className="card-body pt-1" style={{ height: '120px' }}>
+                                        <span className="avatar avatar-xl avatar-rounded me-2 mb-2">
+                                            <ImageWithBasePath src={card.image} alt={card.title} />
+                                        </span>
+                                        <div className="fw-semibold fs-16">{card.title}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+
+                <div className="page-header">
+                    <div className="page-title">
+                        <h3>{isRestricted ? "Reports" : "माहिती पत्रके"}</h3>
+                    </div>
+                </div>
+
+                <div className="row">
+                    {visibleReports.length === 0 ? (
+                        <div className="col-12 text-center mt-4">
+                            <p>{isRestricted ? "You do not have access to any report." : "आपल्याकडे कोणत्याही अहवालासाठी प्रवेश नाही."}</p>
+                        </div>
+                    ) : (
+                        visibleReports.map((card, index) => (
                             <div
                                 className="col-6 col-sm-6 col-md-4 col-lg-2 col-xxl-2 mb-3"
                                 key={index}

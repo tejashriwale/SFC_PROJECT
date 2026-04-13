@@ -80,6 +80,10 @@ namespace Project.Repository
                 parameter.Value = input.LDATE;
                 command.Parameters.Add(parameter);
 
+                parameter = command.CreateParameter();
+                parameter.ParameterName = "@PONO";
+                parameter.Value = input.PONO ?? "";
+                command.Parameters.Add(parameter);
 
                 dbContext.Database.OpenConnection();
 

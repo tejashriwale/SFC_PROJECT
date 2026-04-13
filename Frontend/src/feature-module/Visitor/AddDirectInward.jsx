@@ -65,7 +65,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
         getTodayDate();
     }, [CROPID,]);
     const getTodayDate = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const formatted = today.toLocaleDateString("en-GB", {
             day: "2-digit",
             month: "short",
@@ -462,28 +462,28 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
 
 
     const getTodayDate1 = () => {
-        const today = new Date();
+        const today = userdetail?.APPDT ? new Date(userdetail.APPDT) : new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         return `${yyyy}-${mm}-${dd}`;
     };
 
-    const TodaysDate = getTodayDate1()
-    useEffect(() => {
-        if (StartDate && EndDate) {
-            const start = new Date(StartDate);
-            const end = new Date(EndDate);
+    const [harvestingDate, setHarvestingDate] = useState(getTodayDate1());
+    // useEffect(() => {
+    //     if (StartDate && EndDate) {
+    //         const start = new Date(StartDate);
+    //         const end = new Date(EndDate);
 
-            const diffTime = end.getTime() - start.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    //         const diffTime = end.getTime() - start.getTime();
+    //         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            formData((prev) => ({
-                ...prev,
-                TotalDays: diffDays >= 0 ? diffDays : 0,
-            }));
-        }
-    }, [StartDate, EndDate]);
+    //         setFormData((prev) => ({
+    //             ...prev,
+    //             TotalDays: diffDays >= 0 ? diffDays : 0,
+    //         }));
+    //     }
+    // }, [StartDate, EndDate]);
 
 
 
@@ -755,7 +755,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                     fname: formData?.FarmerName || "",
                     fcontactno: formData?.PhoneNo || "",
                     uaid: userdetail?.uaid ? userdetail.uaid : "",
-                    date: TodaysDate,
+                    date: harvestingDate,
                     uid: "",
                     fcmtoken: "",
                     refid: "",
@@ -811,7 +811,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                     {
                         cdaid: cropIdDetail,
                         cropid: cropid,
-                        shsdate: TodaysDate,
+                        shsdate: harvestingDate,
                         vehno: detailData.VehicleNo,
                         packer: detailData.packer,
                         worker: detailData.labour,
@@ -832,7 +832,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                 cropInvertMaster: [
                     {
                         cropid: cropid,
-                        crdate: TodaysDate,
+                        crdate: harvestingDate,
                         faid: FFAID,
                         ctype: formData.CropType == undefined ? formData.CropName : formData.CropType,
                         carea: formData.CropArea,
@@ -856,7 +856,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                         trnsr: nextTrnsr,
                         trnsid: "40",
                         trntid: "10",
-                        trndt: TodaysDate,
+                        trndt: harvestingDate,
                         cropid: formData.CropType == undefined ? formData.CropName : formData.CropType,
                         refaid: cropid,
                         maid: FFAID || "",
@@ -865,7 +865,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                         advamt: transactions.advamt || 0,
                         asid: cropid,
                         isdeleted: false,
-                        paymentdt: TodaysDate,
+                        paymentdt: harvestingDate,
                         companyid: userdetail?.companyID || "",
                         deptid: userdetail?.departmentID || "",
                     }
@@ -873,7 +873,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                 stockDetails: [
                     {
                         staid: cropIdDetail,
-                        trndt: TodaysDate,
+                        trndt: harvestingDate,
                         crop: formData.CropType == undefined ? formData.CropName : formData.CropType,
                         faid: formData.faid,
                         ciaid: cropid,
@@ -1028,6 +1028,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                             cropInvert: item.cropinvert || "",
                             Quantity: item.pquntity || 0,
                             Weight: item.weight || 0,
+                            Rate: item.rate || 0,
                             packingsize: item.packingsize || "",
                             isdeleted: 0,
                             Grade: item.cgrade || "",
@@ -1296,8 +1297,8 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                                                                 type="date"
                                                                 className="form-control"
                                                                 name="StartDate"
-                                                                value={TodaysDate}
-                                                                readOnly
+                                                                value={harvestingDate}
+                                                                onChange={(e) => setHarvestingDate(e.target.value)}
                                                             />
                                                         </div>
                                                     </div>

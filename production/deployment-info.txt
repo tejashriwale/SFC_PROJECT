@@ -1,12 +1,12 @@
 SFC Full-Stack Application - Production Build 
-Build Date: 31-Dec-25 15:39:05.52 
+Build Date: 06-04-2026 12:48:55.76 
  
-Frontend URL: http://adsvr:333/ 
-Backend URL:  http://adsvr:333/Backend 
-Swagger URL:  http://adsvr:333/Backend/swagger 
+Frontend URL: https://www.shramjeevanagrofarm.com/ 
+Backend URL:  https://www.shramjeevanagrofarm.com/Backend 
+Swagger URL:  https://www.shramjeevanagrofarm.com/Backend/swagger 
  
 Deployment Instructions: 
-1. Deploy production\frontend\ to IIS site at http://adsvr:333 
-2. Deploy production\backend\ to IIS application at http://adsvr:333/Backend 
+1. Deploy production\frontend\ to IIS site at https://www.shramjeevanagrofarm.com 
+2. Deploy production\backend\ to IIS application at https://www.shramjeevanagrofarm.com/Backend 
  
 For detailed instructions, see DEPLOYMENT.md in the root folder 

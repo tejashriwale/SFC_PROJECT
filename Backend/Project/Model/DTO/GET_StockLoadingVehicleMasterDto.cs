@@ -13,5 +13,6 @@
         public string LDATE { get; set; }
         public string BILLSTATUS { get; set; }
         public double SAMT { get; set; }
+        public string PONO { get; set; }
     }
 }

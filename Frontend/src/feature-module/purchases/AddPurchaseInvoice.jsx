@@ -36,7 +36,7 @@ function AddPurchaseInvoice({ PBAID, onRefresh }) {
     const [paymentmode, setpaymentmode] = useState([]);
     const [formData, setFormData] = useState({
         PBBILLNO: "",
-        PBBILLDATE: new Date().toISOString().split("T")[0],
+        PBBILLDATE: userdetail?.APPDT || new Date().toISOString().split("T")[0],
         PBDUEDATE: "",
         PBVEHICALNO: "",
         PBPOSUPPLY: "",
@@ -414,7 +414,7 @@ function AddPurchaseInvoice({ PBAID, onRefresh }) {
                                     organizationID: userdetail?.companyID,
                                     divisionID: userdetail?.divisionID || "D001",
                                     voucherTID: "CP",
-                                    voucherDate: new Date().toISOString().split("T")[0],
+                                    voucherDate: userdetail?.APPDT || new Date().toISOString().split("T")[0],
                                     creditacc: Accounts.CREDITACC,
                                     purchaseacc: Accounts.PURCHASEACC,
                                     cashacc: Accounts.CASHACC,
@@ -511,7 +511,7 @@ function AddPurchaseInvoice({ PBAID, onRefresh }) {
 
                 setFormData({
                     PBBILLNO: "",
-                    PBBILLDATE: new Date().toISOString().split("T")[0],
+                    PBBILLDATE: userdetail?.APPDT || new Date().toISOString().split("T")[0],
                     PBDUEDATE: "",
                     PBVEHICALNO: "",
                     PBPOSUPPLY: "",

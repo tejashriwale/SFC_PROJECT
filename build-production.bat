@@ -102,13 +102,13 @@ echo   - Creating deployment-info.txt...
 echo SFC Full-Stack Application - Production Build > "production\deployment-info.txt"
 echo Build Date: %date% %time% >> "production\deployment-info.txt"
 echo. >> "production\deployment-info.txt"
-echo Frontend URL: http://adsvr:333/ >> "production\deployment-info.txt"
-echo Backend URL:  http://adsvr:333/Backend >> "production\deployment-info.txt"
-echo Swagger URL:  http://adsvr:333/Backend/swagger >> "production\deployment-info.txt"
+echo Frontend URL: https://www.shramjeevanagrofarm.com/ >> "production\deployment-info.txt"
+echo Backend URL:  https://www.shramjeevanagrofarm.com/Backend >> "production\deployment-info.txt"
+echo Swagger URL:  https://www.shramjeevanagrofarm.com/Backend/swagger >> "production\deployment-info.txt"
 echo. >> "production\deployment-info.txt"
 echo Deployment Instructions: >> "production\deployment-info.txt"
-echo 1. Deploy production\frontend\ to IIS site at http://adsvr:333 >> "production\deployment-info.txt"
-echo 2. Deploy production\backend\ to IIS application at http://adsvr:333/Backend >> "production\deployment-info.txt"
+echo 1. Deploy production\frontend\ to IIS site at https://www.shramjeevanagrofarm.com >> "production\deployment-info.txt"
+echo 2. Deploy production\backend\ to IIS application at https://www.shramjeevanagrofarm.com/Backend >> "production\deployment-info.txt"
 echo. >> "production\deployment-info.txt"
 echo For detailed instructions, see DEPLOYMENT.md in the root folder >> "production\deployment-info.txt"
 
@@ -133,12 +133,12 @@ echo ========================================
 echo.
 echo All production files are organized in: %CD%\production\
 echo.
-echo 1. Open IIS Manager on server 'adsvr'
+echo 1. Open IIS Manager on server (shramjeevanagrofarm.com)
 echo.
 echo 2. Create IIS Site for Frontend:
 echo    - Site Name: SFC Frontend
 echo    - Physical Path: %CD%\production\frontend\
-echo    - Binding: http://adsvr:333
+echo    - Binding: https://www.shramjeevanagrofarm.com
 echo.
 echo 3. Create IIS Application for Backend:
 echo    - Right-click "SFC Frontend" site
@@ -151,8 +151,8 @@ echo      * .NET CLR Version: No Managed Code
 echo      * Managed Pipeline Mode: Integrated
 echo.
 echo 4. Test the deployment:
-echo    - Frontend: http://adsvr:333/
-echo    - Backend:  http://adsvr:333/Backend/swagger
+echo    - Frontend: https://www.shramjeevanagrofarm.com/
+echo    - Backend:  https://www.shramjeevanagrofarm.com/Backend/swagger
 echo.
 echo For detailed deployment instructions, see DEPLOYMENT.md
 echo.

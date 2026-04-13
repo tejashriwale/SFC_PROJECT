@@ -55,7 +55,7 @@ const ProceedRequisition = ({ SQAMAID, srno, onRefresh }) => {
 
     const [formData, setFormData] = useState({
         SQNO: '',
-        SQDATE: new Date().toISOString().split('T')[0], // Current date set here
+        SQDATE: userdetail?.APPDT || new Date().toISOString().split('T')[0],
         SPRNO: '',
         SQDUEDATE: '',
         SQCAID: '',
