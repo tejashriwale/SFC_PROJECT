@@ -106,22 +106,24 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                         throw new Error("Failed to fetch SchedulerMaster data");
                     if (response1.data.length > 0) {
                         const data = response1.data[0];
-                        console.log(response1.data, "response1.dataresponse1.data")
+                        const crops = data.croP1 ? data.croP1.split(',') : [];
+                        const grades = data.gradE1 ? data.gradE1.split(',') : [];
                         setFormData({
-                            Crop: data.croP1 ? data.croP1.split(',') : [],
-                            Grade: data.gradE1 ? data.gradE1.split(',') : [],
+                            Crop: crops,
+                            Grade: grades,
                             Trader: data.tradeR1 || "",
                             VehicleNumber: data.vehicleno || "",
                             CaretCount: data.caretcount || "",
                             PoNo: data.pono || ""
                         });
-                        console.log(data, "hrutikhghvjhjh")
+                        return { crops, grades };
                     }
                 } catch (error) {
                     console.error("Error fetching data:", error);
                 }
+                return null;
             };
-            const fetchDetailTableData = async () => {
+            const fetchDetailTableData = async (crops, grades) => {
                 try {
                     const payload1 = {
                         "svvmid": SLVMID,
@@ -140,17 +142,51 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                     if (response.status !== 200)
                         throw new Error("Failed to fetch SchedulerMaster data");
                     if (response.data.length > 0) {
-                        const data = response.data[0];
-                        console.log(response.data, "response1.dataresponse.data")
-                        setTableData1(response.data);
-                        console.log(data, "hrutikhghvjhjh")
+                        let detailData = response.data;
+
+                        // Fetch msize from CropVehicleLoadingData to calculate expense
+                        if (crops && crops.length > 0 && grades && grades.length > 0) {
+                            try {
+                                const cropPayload = {
+                                    "companyid": userdetail?.companyID || "",
+                                    "deptid": userdetail?.departmentID || "",
+                                    crop: crops.join(','),
+                                    cgrade: grades.join(','),
+                                };
+                                const cropResponse = await axios.post(
+                                    `${baseUrl.Url}/backend/api/GET_CropVehicleLoadingData`,
+                                    cropPayload,
+                                    { headers }
+                                );
+                                if (cropResponse.status === 200 && cropResponse.data.length > 0) {
+                                    detailData = detailData.map(item => {
+                                        const match = cropResponse.data.find(c => c.staid === item.staid);
+                                        const msize = match ? parseFloat(match.msize || 0) : 0;
+                                        const count = parseFloat(item.count || 0);
+                                        const charges = parseFloat(item.charges || 0);
+                                        const totalWeight = count * msize;
+                                        const expense = msize > 0 ? totalWeight * charges : parseFloat(item.expense || 0);
+                                        return { ...item, msize: match ? match.msize : "", expense };
+                                    });
+                                }
+                            } catch (err) {
+                                console.error("Error fetching msize data:", err);
+                            }
+                        }
+
+                        setTableData1(detailData);
                     }
                 } catch (error) {
                     console.error("Error fetching data:", error);
                 }
             };
-            fetchData();
-            fetchDetailTableData();
+            fetchData().then((result) => {
+                if (result) {
+                    fetchDetailTableData(result.crops, result.grades);
+                } else {
+                    fetchDetailTableData();
+                }
+            });
         }
     }, [SLVMID, refreshKey]);
 
@@ -598,8 +634,14 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 const msize = parseFloat(item.msize || 0);
                 const totalWeight = newCount * msize;
                 const totalamount = newCount * rate;
-                console.log("totalamount totalamount totalamount", totalamount)
-                const expense = name === 'expense' ? (parseFloat(value) || 0) : (totalWeight * charges);
+                let expense;
+                if (name === 'expense') {
+                    expense = parseFloat(value) || 0;
+                } else if (msize > 0) {
+                    expense = totalWeight * charges;
+                } else {
+                    expense = parseFloat(item.expense || 0);
+                }
                 return {
                     ...item,
                     [name]: value,

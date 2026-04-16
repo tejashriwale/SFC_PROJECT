@@ -559,25 +559,15 @@ function ReportsInd() {
                         const cropNames = [...new Set(details.map(d => d.cropname).filter(Boolean))].join(', ');
                         const totalCrt = details.reduce((s, d) => s + (parseFloat(d.count) || 0), 0);
                         const totalCharges = details.reduce((s, d) => s + (parseFloat(d.charges) || 0), 0);
-                        // Quantity/Kg = sum of totalamount for each detail (totalamount = count * rate = weight in value)
-                        // Weight per SKU = if totalamount and rate available, qtykg = totalamount/rate per row, then weight = qtykg/count
-                        let totalQtyKg = 0;
-                        details.forEach(d => {
-                            const cnt = parseFloat(d.count) || 0;
-                            const rate = parseFloat(d.rate) || 0;
-                            const totAmt = parseFloat(d.totalamount) || 0;
-                            if (rate > 0) {
-                                totalQtyKg += totAmt / rate;
-                            } else {
-                                totalQtyKg += cnt;
-                            }
-                        });
-                        const weightPerSku = totalCrt > 0 ? (totalQtyKg / totalCrt) : 0;
+                        const totalExpense = details.reduce((s, d) => s + (parseFloat(d.expense) || 0), 0);
+                        const totalAmount = details.reduce((s, d) => s + (parseFloat(d.totalamount) || 0), 0);
+                        // Rate per crate (average)
+                        const avgRate = totalCrt > 0 ? (totalAmount / totalCrt) : 0;
                         detailMap[refaid] = {
                             cropname: cropNames,
-                            wtpersku: weightPerSku,
                             qtycrt: totalCrt,
-                            qtykg: totalQtyKg,
+                            rate: avgRate,
+                            expense: totalExpense,
                             pcharges: totalCharges
                         };
                     }
@@ -592,9 +582,9 @@ function ReportsInd() {
                 return {
                     ...r,
                     cropname: r.cropname || detail.cropname || '',
-                    wtpersku: r.wtpersku || detail.wtpersku || 0,
                     qtycrt: r.qtycrt || detail.qtycrt || 0,
-                    qtykg: r.qtykg || detail.qtykg || 0,
+                    detailrate: detail.rate || 0,
+                    expense: detail.expense || 0,
                     pcharges: r.pcharges || detail.pcharges || 0,
                 };
             });
@@ -1186,6 +1176,10 @@ function ReportsInd() {
             const n = parseFloat(v) || 0;
             return n === 0 ? '' : n.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
         };
+        const fmtInt = (v) => {
+            const n = parseInt(v) || 0;
+            return n === 0 ? '' : n.toLocaleString('en-IN');
+        };
 
         // Build a map: for each refaid, find the payment date (trndt of the payment row)
         const releaseDateMap = {};
@@ -1226,9 +1220,7 @@ function ReportsInd() {
                     <td>${r.vehicleno || ''}</td>
                     <td class="name">${r.ccompanyname || ''}</td>
                     <td>${r.cropname || ''}</td>
-                    <td class="num">${fmtNum(r.wtpersku)}</td>
-                    <td class="num">${fmtNum(r.qtycrt)}</td>
-                    <td class="num">${fmtNum(r.qtykg)}</td>
+                    <td class="num">${fmtInt(r.qtycrt)}</td>
                     <td class="num">${fmtNum(purchase)}</td>
                     <td class="num">${fmtNum(payment + advance)}</td>
                     <td>${releaseDate}</td>
@@ -1240,8 +1232,6 @@ function ReportsInd() {
                     <td>${r.trndt || ''}</td>
                     <td>${r.vehicleno || ''}</td>
                     <td class="name">${r.ccompanyname || ''}</td>
-                    <td></td>
-                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -1411,9 +1401,7 @@ function ReportsInd() {
                                     <th>Vehicle No</th>
                                     <th>Farmer Name</th>
                                     <th>Variety</th>
-                                    <th>Weight</th>
                                     <th>Quantity/Crt</th>
-                                    <th>Quantity/Kg</th>
                                     <th>Purchase Amount</th>
                                     <th>Payment</th>
                                     <th>Release Date</th>

@@ -20,5 +20,6 @@
         public string STAID { get; set; }
         public double RATE { get; set; }
         public double SVALUE { get; set; }
+        public string MSIZE { get; set; }
     }
 }

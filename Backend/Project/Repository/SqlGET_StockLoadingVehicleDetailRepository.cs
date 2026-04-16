@@ -44,6 +44,7 @@ namespace Project.Repository
                             STAID = reader.GetString("STAID"),
                             RATE = reader.GetDouble("RATE"),
                             SVALUE = reader.GetDouble("SVALUE"),
+                            MSIZE = "",
 
                         });
                     }

@@ -1503,6 +1503,8 @@ builder.Services.AddScoped<IGET_CustomerLedgerRepository, SqlGET_CustomerLedgerR
 
 builder.Services.AddScoped<IGET_SalesReportRepository, SqlGET_SalesReportRepository>();
 
+builder.Services.AddScoped<ISP_UpdateApplicationDateRepository, SqlSP_UpdateApplicationDateRepository>();
+
 
 
 

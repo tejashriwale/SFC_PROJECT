@@ -5,10 +5,13 @@ import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Settings, User } from "react-feather";
 import { all_routes } from "../../Router/all_routes";
 // import "../../style/scss/layout/_header"
-import { getUserData } from "../../Context/UserData";
+import { getUserData, updateUserData } from "../../Context/UserData";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { baseUrl } from "../../core/json/custom";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { convertToCustomDate } from "../../feature-module/pages/login/signin";
 import { FiLogOut } from 'react-icons/fi';
 import { useGoogleTranslate } from './useGoogleTranslate';
 import { WiDayLightning } from "weather-icons-react";
@@ -27,6 +30,104 @@ const Header = () => {
   const isRestricted = userdetail?.LANGUAGE === "en" || "";
   const navigate = useNavigate();
   const [selectedLanguage, setSelectedLanguage] = useState(isRestricted ? 'en' : 'mr');
+  const MySwal = withReactContent(Swal);
+
+  // Convert APPDT "16 Apr 2026" to "YYYY-MM-DD" for date input
+  const appDateToInputFormat = (appdt) => {
+    if (!appdt) return '';
+    const d = new Date(appdt);
+    if (isNaN(d)) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [headerDate, setHeaderDate] = useState(appDateToInputFormat(userdetail?.APPDT));
+
+  const handleHeaderDateChange = async (e) => {
+    const newDateValue = e.target.value; // YYYY-MM-DD
+    if (!newDateValue) return;
+
+    const today = new Date().toISOString().split("T")[0];
+    if (newDateValue > today) return;
+    if (newDateValue === headerDate) return;
+
+    const confirmResult = await MySwal.fire({
+      icon: "question",
+      title: isRestricted ? "Change Date?" : "तारीख बदलायची आहे का?",
+      text: isRestricted
+        ? `Do you want to change the application date to ${newDateValue}?`
+        : `तुम्हाला अॅप्लिकेशन तारीख ${newDateValue} मध्ये बदलायची आहे का?`,
+      showCancelButton: true,
+      confirmButtonColor: "#3e5f68",
+      cancelButtonColor: "#d33",
+      confirmButtonText: isRestricted ? "Yes, Change" : "होय, बदला",
+      cancelButtonText: isRestricted ? "No" : "नाही",
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    });
+
+    if (!confirmResult.isConfirmed) {
+      e.target.value = headerDate;
+      return;
+    }
+
+    const inputDate = new Date(newDateValue);
+    const formattedDate = inputDate.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+
+    try {
+      const payload = {
+        date: formattedDate,
+        companyid: userdetail?.companyID,
+        branchid: userdetail?.departmentID
+      };
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "*/*",
+      };
+      const response = await axios.post(
+        baseUrl.Url + "/backend/api/SP_UpdateApplicationDate",
+        payload,
+        { headers }
+      );
+      if (response.status === 200 && response.data[0]?.isSuccessful == 1) {
+        const newAPPDT = convertToCustomDate(newDateValue, 0);
+        const userData = getUserData();
+        updateUserData({
+          ...userData,
+          userdetail: { ...userData.userdetail, APPDT: newAPPDT }
+        });
+        setHeaderDate(newDateValue);
+        MySwal.fire({
+          icon: "success",
+          title: isRestricted ? "Success" : "यशस्वी",
+          text: isRestricted ? "Application date updated for all users." : "अॅप्लिकेशन तारीख सर्व वापरकर्त्यांसाठी अपडेट केली.",
+          confirmButtonText: "OK",
+        });
+      } else {
+        MySwal.fire({
+          icon: "warning",
+          title: isRestricted ? "Attention" : "कृपया लक्ष द्या!",
+          text: response.data[0]?.responseMessage || (isRestricted ? "Failed to update date." : "तारीख अपडेट करता आली नाही."),
+          confirmButtonText: "OK",
+        });
+      }
+    } catch (error) {
+      console.error("Date update error:", error);
+      MySwal.fire({
+        icon: "error",
+        title: isRestricted ? "Error" : "त्रुटी",
+        text: isRestricted ? "Failed to update application date." : "अॅप्लिकेशन तारीख अपडेट करण्यात अयशस्वी.",
+        confirmButtonText: "OK",
+      });
+    }
+  };
+
   const waitForGoogleTranslateCombo = () => {
     return new Promise((resolve) => {
       const checkExist = setInterval(() => {
@@ -505,7 +606,26 @@ const Header = () => {
                 fontSize: '1.2rem',
               }}
             >
-              <b style={{ color: '#3e5f68' }}>{isRestricted ? 'Date' : 'दिनांक'} : <span style={{ color: 'balck' }}> {userdetail?.APPDT}</span> </b>
+              <b style={{ color: '#3e5f68', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {isRestricted ? 'Date' : 'दिनांक'} :
+                <input
+                  type="date"
+                  value={headerDate}
+                  min={headerDate}
+                  max={new Date().toISOString().split("T")[0]}
+                  onChange={handleHeaderDateChange}
+                  style={{
+                    border: '1px solid #3e5f68',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '1rem',
+                    color: '#3e5f68',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                />
+              </b>
             </div>
           </li>
           <li
