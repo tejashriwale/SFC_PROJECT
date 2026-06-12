@@ -875,7 +875,7 @@ const AddDirectInward = ({ FAID, CROPID, onRefresh }) => {
                         staid: cropIdDetail,
                         trndt: harvestingDate,
                         crop: formData.CropType == undefined ? formData.CropName : formData.CropType,
-                        faid: formData.faid,
+                        faid: formData.faid ? formData.faid : FFAID,
                         ciaid: cropid,
                         totcr: detailData.Quantity,
                         totwt: detailData.Weight,

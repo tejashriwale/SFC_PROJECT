@@ -633,7 +633,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 const charges = parseFloat(item.charges || 0);
                 const msize = parseFloat(item.msize || 0);
                 const totalWeight = newCount * msize;
-                const totalamount = newCount * rate;
+                const totalamount = totalWeight * rate;
                 let expense;
                 if (name === 'expense') {
                     expense = parseFloat(value) || 0;
