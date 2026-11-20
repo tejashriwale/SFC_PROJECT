@@ -18,7 +18,8 @@ namespace Project.Repository
            List<GET_HSNCode> list = new List<GET_HSNCode>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select * from [GET_HSNCode]('"+ hSNCode.KEYWORD + "')";
+                command.CommandText = "select * from [GET_HSNCode](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(hSNCode.KEYWORD) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())

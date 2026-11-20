@@ -5,7 +5,7 @@ import ImageWithBasePath from "../../core/img/imagewithbasebath";
 import { Settings, User } from "react-feather";
 import { all_routes } from "../../Router/all_routes";
 // import "../../style/scss/layout/_header"
-import { getUserData, updateUserData } from "../../Context/UserData";
+import { getUserData, updateUserData, clearUserData } from "../../Context/UserData";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { baseUrl } from "../../core/json/custom";
@@ -154,6 +154,7 @@ const Header = () => {
           }
         });
       }
+      clearUserData();
       navigate("/signin");
     } catch (error) {
       console.error("❌ Logout failed:", error);

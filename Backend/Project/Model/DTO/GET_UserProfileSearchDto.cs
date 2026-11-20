@@ -17,6 +17,7 @@
         public string UROLEID { get; set; }
         public string LANGUAGE { get; set; }
         public int Status { get; set; }
+        public string? Token { get; set; }
 
     }
 }

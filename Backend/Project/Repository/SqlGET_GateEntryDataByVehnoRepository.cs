@@ -17,7 +17,9 @@ namespace Project.Repository
             List<GET_GateEntryDataByVehno> list = new List<GET_GateEntryDataByVehno>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_GateEntryDataByVehno]('" + input.VEHNO + "' , '" + input.DATE + "')order by date desc";
+                command.CommandText = "SELECT * FROM [GET_GateEntryDataByVehno](@p0 , @p1)order by date desc";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.VEHNO) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.DATE) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

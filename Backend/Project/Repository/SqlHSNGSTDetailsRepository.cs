@@ -20,7 +20,8 @@ namespace Project.Repository
 
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_HSNGSTDetails]('"+ hSNDOMAIN.HAID  +"')";
+                command.CommandText = "SELECT * FROM [GET_HSNGSTDetails](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(hSNDOMAIN.HAID) ?? ""); command.Parameters.Add(command_p0); }
 
                 dbContext.Database.OpenConnection();
 

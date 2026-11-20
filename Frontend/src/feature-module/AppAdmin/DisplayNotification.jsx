@@ -119,7 +119,7 @@ const DisplayNotification = () => {
         };
         try {
             const response = await axios.post(
-                "http://adsvr:10/backend/api/Notification/send",
+                baseUrl.Url + "/backend/api/Notification/send",
                 payload,
                 {
                     headers: {

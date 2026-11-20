@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_challan_from_Return_master> list = new List<GET_challan_from_Return_master>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT Top 20 * FROM [GET_challan_from_Return_master]('" + input.PBNO + "')";
+                command.CommandText = "SELECT Top 20 * FROM [GET_challan_from_Return_master](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PBNO) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

@@ -20,7 +20,8 @@ namespace Project.Repository
 
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select Top 20 * from [GET_HSNMasters]('%' ,'" + input.KEYWORD + "')";
+                command.CommandText = "select Top 20 * from [GET_HSNMasters]('%' ,@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())
@@ -52,7 +53,9 @@ namespace Project.Repository
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
 
             {
-                command.CommandText = "select Top 20 * FROM [dbo].[GET_HSNMasters]('" + input.PKID + "' , '" + input.KEYWORD + "' )";
+                command.CommandText = "select Top 20 * FROM [dbo].[GET_HSNMasters](@p0 , @p1 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PKID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p1); }
                 await dbContext.Database.OpenConnectionAsync();
 
                 using(var reader = await command.ExecuteReaderAsync())
@@ -85,7 +88,9 @@ namespace Project.Repository
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
 
             {
-                command.CommandText = "select Top 20 *FROM [dbo].[GET_HSNMasters]('" + input.PKID + "' , '" + input.KEYWORD + "' )";
+                command.CommandText = "select Top 20 *FROM [dbo].[GET_HSNMasters](@p0 , @p1 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PKID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

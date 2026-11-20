@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_CheckMobileApp> list = new List<GET_CheckMobileApp>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_CheckMobileApp]('" + input.TCANTACTNO + "')";
+                command.CommandText = "SELECT * FROM [GET_CheckMobileApp](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.TCANTACTNO) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())

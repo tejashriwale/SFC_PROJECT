@@ -18,7 +18,8 @@ namespace Project.Repository
             List<GET_Subgroup> list = new List<GET_Subgroup>();
             using(var commmand = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                commmand.CommandText = "SELECT * FROM [GET_Subgroup]('" + input.MGRPID + "')";
+                commmand.CommandText = "SELECT * FROM [GET_Subgroup](@p0)";
+                { var commmand_p0 = commmand.CreateParameter(); commmand_p0.ParameterName = "@p0"; commmand_p0.Value = (object)(Convert.ToString(input.MGRPID) ?? ""); commmand.Parameters.Add(commmand_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await commmand.ExecuteReaderAsync())

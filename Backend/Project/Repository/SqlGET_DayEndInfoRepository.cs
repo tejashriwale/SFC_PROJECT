@@ -19,7 +19,8 @@ namespace Project.Repository
             List<GET_DayEndInfo> list = new List<GET_DayEndInfo>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT  * FROM [GET_DayEndInfo]('" + input.DATE + "' )";
+                command.CommandText = "SELECT  * FROM [GET_DayEndInfo](@p0 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.DATE) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

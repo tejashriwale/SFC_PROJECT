@@ -50,7 +50,8 @@ namespace Project.Repository
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
 
             {
-                command.CommandText = "SELECT * FROM [dbo].[GET_UserProfile]('" + input.PKID + "' )";
+                command.CommandText = "SELECT * FROM [dbo].[GET_UserProfile](@p0 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PKID) ?? ""); command.Parameters.Add(command_p0); }
 
               
 

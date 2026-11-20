@@ -25,6 +25,11 @@ namespace Project.Controllers
         {
             try
             {
+                // When authenticated, a caller may only change their own login state
+                var tokenUaid = User.FindFirst("uaid")?.Value;
+                if (User.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(tokenUaid) && tokenUaid != input?.UAID?.ToString())
+                    return Forbid();
+
                 var domain = await repository.getasync(input);
                 var dto = mapper.Map<List<ApiResponseMessageDto>>(domain);
 
@@ -33,7 +38,7 @@ namespace Project.Controllers
             catch (Exception ex)
             {
 
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                return StatusCode(500, "Internal server error.");
             }
         }
     }

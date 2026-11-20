@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_CheckUserSession> result = new List<GET_CheckUserSession>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_CheckUserSession]('" + input.UAID + "' )";
+                command.CommandText = "SELECT * FROM [GET_CheckUserSession](@p0 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.UAID) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

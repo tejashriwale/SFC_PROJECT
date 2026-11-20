@@ -518,7 +518,21 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
         });
     };
 
+    // Prevents duplicate bills from a double click while a save is in flight
+    const isSavingRef = useRef(false);
     const handleSubmit = async (e) => {
+        if (isSavingRef.current) {
+            e?.preventDefault?.();
+            return;
+        }
+        isSavingRef.current = true;
+        try {
+            await submitBill(e);
+        } finally {
+            isSavingRef.current = false;
+        }
+    };
+    const submitBill = async (e) => {
         e.preventDefault();
         let cropidToRollback = null;
         const activeDetails = TableData.filter(row => parseInt(row.isdeleted) !== 1);
@@ -880,7 +894,7 @@ const AddCropBill = ({ CROPID, cdaid, VDAID, MAID }) => {
     useEffect(() => {
         const Rate = parseFloat(formData.Rate) || 0;
         const weight = parseFloat(detailData.Weight) || 0;
-        const cropInvert = Rate * weight;
+        const cropInvert = Math.round(Rate * weight * 100) / 100;
         setFormData(prev => ({
             ...prev,
             cropInvert: cropInvert.toString()

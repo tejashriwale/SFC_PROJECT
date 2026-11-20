@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Project.Data;
 using Project.Model.Domain;
@@ -18,7 +18,9 @@ namespace Project.Repository
             List<GET_UserProfileSearchDomain> list = new List<GET_UserProfileSearchDomain>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select * from [GET_UserMastersSearch]('" + input.EMAIL +"' , '"+ input.PASSWORD +"')";
+                command.CommandText = "select * from [GET_UserMastersSearch](@email, @password)";
+                var pEmail = command.CreateParameter(); pEmail.ParameterName = "@email"; pEmail.Value = (object?)input.EMAIL ?? DBNull.Value; command.Parameters.Add(pEmail);
+                var pPass = command.CreateParameter(); pPass.ParameterName = "@password"; pPass.Value = (object?)input.PASSWORD ?? DBNull.Value; command.Parameters.Add(pPass);
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())

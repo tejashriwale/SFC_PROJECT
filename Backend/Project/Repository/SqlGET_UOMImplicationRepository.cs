@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_UOMImplication> list = new List<GET_UOMImplication>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_UOMImplication]('" + input.PSALE + "')";
+                command.CommandText = "SELECT * FROM [GET_UOMImplication](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PSALE) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())

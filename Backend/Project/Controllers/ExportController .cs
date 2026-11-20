@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -24,6 +24,9 @@ public class ExportController : ControllerBase
     {
         if (string.IsNullOrEmpty(request.QueryType) || string.IsNullOrEmpty(request.QueryName))
             return BadRequest("QueryType (SP/FUNCTION) आणि QueryName लागेल!");
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(request.QueryName, @"^[A-Za-z_][A-Za-z0-9_]{0,127}(\.[A-Za-z_][A-Za-z0-9_]{0,127})?$"))
+            return BadRequest("Invalid QueryName.");
 
         // **Data Fetch करतो**
         var dataTable = await GetData(request.QueryType, request.QueryName);
@@ -52,7 +55,7 @@ public class ExportController : ControllerBase
             {
                 workbook.SaveAs(stream);
                 var content = stream.ToArray();
-                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{request.QueryName}.xlsx");
+                return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{request.QueryName.Replace('.', '_')}.xlsx");
             }
         }
     }
@@ -60,7 +63,7 @@ public class ExportController : ControllerBase
     private async Task<DataTable> GetData(string queryType, string queryName)
     {
         DataTable dt = new DataTable();
-        using (var conn = new SqlConnection(_config.GetConnectionString("shadimuharathConStr")))
+        using (var conn = new SqlConnection(_config.GetConnectionString("shadimuharathConStrt")))
         {
             await conn.OpenAsync();
             string sqlQuery = "";
@@ -68,12 +71,12 @@ public class ExportController : ControllerBase
             if (queryType.ToUpper() == "SP")
             {
                 // If it's a Stored Procedure, we'll execute it directly
-                sqlQuery = $"EXEC {queryName}";
+                sqlQuery = $"EXEC [{queryName.Replace(".", "].[")}]";
             }
             else if (queryType.ToUpper() == "FUNCTION")
             {
                 // If it's a Function, we will query it using SELECT *
-                sqlQuery = $"SELECT * FROM {queryName}()";
+                sqlQuery = $"SELECT * FROM [{queryName.Replace(".", "].[")}]()";
             }
             else
             {

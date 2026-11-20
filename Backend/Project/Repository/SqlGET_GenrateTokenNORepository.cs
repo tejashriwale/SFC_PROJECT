@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_GenrateTokenNO> result = new List<GET_GenrateTokenNO>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_GenrateTokenNO]('" + input.DATE + "')";
+                command.CommandText = "SELECT * FROM [GET_GenrateTokenNO](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.DATE) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())

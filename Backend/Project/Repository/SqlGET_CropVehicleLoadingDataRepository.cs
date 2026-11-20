@@ -17,7 +17,11 @@ namespace Project.Repository
             List<GET_CropVehicleLoadingData> list = new List<GET_CropVehicleLoadingData>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_CropVehicleLoadingData]('" + input.COMPANYID + "', '" + input.DEPTID + "' , '" + input.CGRADE + "', '" + input.CROP + "')";
+                command.CommandText = "SELECT * FROM [GET_CropVehicleLoadingData](@p0, @p1 , @p2, @p3)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p1); }
+                { var command_p2 = command.CreateParameter(); command_p2.ParameterName = "@p2"; command_p2.Value = (object)(Convert.ToString(input.CGRADE) ?? ""); command.Parameters.Add(command_p2); }
+                { var command_p3 = command.CreateParameter(); command_p3.ParameterName = "@p3"; command_p3.Value = (object)(Convert.ToString(input.CROP) ?? ""); command.Parameters.Add(command_p3); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

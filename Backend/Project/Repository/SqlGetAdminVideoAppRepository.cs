@@ -18,7 +18,8 @@ namespace Project.Repository
             List<GetAdminVideoApp> result = new List<GetAdminVideoApp>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT  * FROM [GetAdminVideoApp]('" + input.PAXID + "')";
+                command.CommandText = "SELECT  * FROM [GetAdminVideoApp](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PAXID) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

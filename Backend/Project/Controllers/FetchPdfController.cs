@@ -20,6 +20,7 @@ namespace Project.Controllers
             }
 
             // Combine the base path with the file name
+            fileName = Path.GetFileName(fileName);
             var fullPath = Path.Combine(_pdfFolderPath, fileName);
 
             Console.WriteLine($"📥 Requested File: {fileName}");

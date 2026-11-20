@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import ImageWithBasePath from "../../../core/img/imagewithbasebath";
 import { all_routes } from "../../../Router/all_routes";
 import { baseUrl } from "../../../core/json/custom";
-import { updateUserData } from "../../../Context/UserData";
+import { updateUserData, setAuthToken } from "../../../Context/UserData";
 import axios from 'axios';
 import FeatherIcon from "feather-icons-react";
 const convertToCustomDate = (dateString, daysToSubtract = 0) => {
@@ -50,17 +50,16 @@ const SigninTwo = () => {
       if (response.status !== 200 || response.data.length === 0) {
         throw new Error("Invalid credentials");
       }
-      if (response.data[0].status === 1) {
-        setError("कोणीतरी आधीच लॉग इन केलेले आहे. तुम्ही आता लॉग इन करू शकत नाही.");
-      } else {
+      // Multiple simultaneous logins are allowed (single-session check removed)
+      {
         const user = response.data[0];
+        setAuthToken(user.token);
         const userdata = {
           username: user.username,
           email: user.email,
           accessPolicy: user.accessPolicy.split(","),
           companyID: user.companyID,
           departmentID: user.departmentID,
-          Password: user.password,
           uaid: user.uaid,
           departmentname: user.departmentname,
           companyname: user.companyname,
@@ -75,7 +74,7 @@ const SigninTwo = () => {
           { headers: { "Content-Type": "application/json", Accept: "*/*" } }
         );
 
-        updateUserData({ isAuthenticated: true, userdetail: userdata });
+        updateUserData({ isAuthenticated: true, userdetail: userdata, token: user.token });
 
         const userAccess = userdata.accessPolicy.find((policy) =>
           [

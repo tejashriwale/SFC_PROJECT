@@ -18,7 +18,8 @@ namespace Project.Repository
             List<StatePincode> result = new List<StatePincode>();
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select * from[GET_StatePincode]('" + statePincodeDomain.SPINCODE +"')";
+                command.CommandText = "select * from[GET_StatePincode](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(statePincodeDomain.SPINCODE) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await  command.ExecuteReaderAsync())

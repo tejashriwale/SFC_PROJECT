@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_SBillNo> result = new List<GET_SBillNo>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_SBillNo]('" + input.SBBILLNO + "')";
+                command.CommandText = "SELECT * FROM [GET_SBillNo](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.SBBILLNO) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

@@ -18,7 +18,9 @@ namespace Project.Repository
             List<GET_CountPrecooling> list = new List<GET_CountPrecooling>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_CountPrecooling]('" + input.startDate + "', '" + input.endDate + "')";
+                command.CommandText = "SELECT * FROM [GET_CountPrecooling](@p0, @p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.startDate) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.endDate) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

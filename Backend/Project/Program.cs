@@ -1,4 +1,4 @@
-﻿using FirebaseAdmin;
+using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using matrimonybackendApi.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -1516,24 +1516,36 @@ builder.Services.AddScoped<ISP_UpdateApplicationDateRepository, SqlSP_UpdateAppl
 
 //var jwtConfig = builder.Configuration.GetSection("Jwt");
 
-//builder.Services.AddAuthentication("Bearer")
-//    .AddJwtBearer("Bearer", options =>
-//    {
-//        options.TokenValidationParameters = new TokenValidationParameters
-//        {
-//            ValidateIssuer = true,
-//            ValidateAudience = true,
-//            ValidateLifetime = true,
-//            ValidateIssuerSigningKey = true,
-//            ValidIssuer = jwtConfig["Issuer"],
-//            ValidAudience = jwtConfig["Audience"],
-//            IssuerSigningKey = new SymmetricSecurityKey(
-//                Encoding.UTF8.GetBytes(jwtConfig["Key"]!)
-//            )
-//        };
-//    });
+var jwtConfig = builder.Configuration.GetSection("Jwt");
+// Signing key: set Jwt__Key (env var / user-secrets) in production. If empty, a random per-process key is used (tokens reset on restart).
+var jwtKey = jwtConfig["Key"];
+if (string.IsNullOrWhiteSpace(jwtKey))
+    jwtKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48));
+builder.Services.AddSingleton(new SfcJwtSettings(jwtKey, jwtConfig["Issuer"] ?? "SFC", jwtConfig["Audience"] ?? "SFC",
+    int.TryParse(jwtConfig["DurationInMinutes"], out var jwtMinutes) ? jwtMinutes : 720));
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtConfig["Issuer"] ?? "SFC",
+            ValidAudience = jwtConfig["Audience"] ?? "SFC",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+// "RequireAuth": true in configuration makes every endpoint require a valid token (except [AllowAnonymous], e.g. login).
+builder.Services.AddAuthorization(options =>
+{
+    if (builder.Configuration.GetValue<bool>("RequireAuth"))
+        options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser().Build();
+});
 
 
 builder.Services.AddHttpClient();
@@ -1564,9 +1576,12 @@ if (app.Environment.IsProduction())
     app.UsePathBase("/backend");
 }
 
-// Configure the HTTP request pipeline - Keep Swagger enabled for all environments
-app.UseSwagger();
-app.UseSwaggerUI();
+// Swagger: development only, or when "EnableSwagger": true is set explicitly in configuration
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("EnableSwagger"))
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseStaticFiles();
 
 //app.UseRouting();
@@ -1579,3 +1594,6 @@ app.UseAuthorization();    // ✅ AFTER authentication
 app.MapControllers();
 
 app.Run();
+
+
+public record SfcJwtSettings(string Key, string Issuer, string Audience, int DurationMinutes);

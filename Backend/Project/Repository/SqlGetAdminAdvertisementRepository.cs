@@ -18,7 +18,8 @@ namespace Project.Repository
             List<GetAdminAdvertisement> list = new List<GetAdminAdvertisement>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GetAdminAdvertisement]( '" + input.COMPANYID + "')";
+                command.CommandText = "SELECT * FROM [GetAdminAdvertisement]( @p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

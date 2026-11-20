@@ -18,7 +18,9 @@ namespace Project.Repository
             List<GET_FARMERFROMCONTACT> list = new List<GET_FARMERFROMCONTACT>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_FARMERFROMCONTACT]('" + input.FCONTACTNO + "' , '" + input.COMPANYID + "')";
+                command.CommandText = "SELECT * FROM [GET_FARMERFROMCONTACT](@p0 , @p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.FCONTACTNO) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
                 using (var reader = await command.ExecuteReaderAsync())
                 {

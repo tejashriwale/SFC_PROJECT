@@ -18,7 +18,9 @@ namespace Project.Repository
 
             using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select Top 20 * from [GET_CustomersPartners]('%' ,'%' , '%', '"+input.COMPANYID+"','"+input.DEPTID+"')";
+                command.CommandText = "select Top 20 * from [GET_CustomersPartners]('%' ,'%' , '%', @p0,@p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using(var reader = await command.ExecuteReaderAsync())
@@ -76,7 +78,12 @@ namespace Project.Repository
             List<_GET_CustomersPartners_> list = new List<_GET_CustomersPartners_>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select Top 20 * from [GET_CustomersPartners]('" + input.PKID + "' ,'" + input.CTYPE + "' , '" + input.KEYWORD + "', '"+input.COMPANYID+"','"+input.DEPTID+"')";
+                command.CommandText = "select Top 20 * from [GET_CustomersPartners](@p0 ,@p1 , @p2, @p3,@p4)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PKID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.CTYPE) ?? ""); command.Parameters.Add(command_p1); }
+                { var command_p2 = command.CreateParameter(); command_p2.ParameterName = "@p2"; command_p2.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p2); }
+                { var command_p3 = command.CreateParameter(); command_p3.ParameterName = "@p3"; command_p3.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p3); }
+                { var command_p4 = command.CreateParameter(); command_p4.ParameterName = "@p4"; command_p4.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p4); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())
@@ -132,7 +139,12 @@ namespace Project.Repository
             List<_GET_CustomersPartners_> list = new List<_GET_CustomersPartners_>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "select * from [GET_CustomersPartners]('" + input.PKID + "' ,'" + input.CTYPE + "' , '" + input.KEYWORD + "', '"+input.COMPANYID+"','"+input.DEPTID+"')";
+                command.CommandText = "select * from [GET_CustomersPartners](@p0 ,@p1 , @p2, @p3,@p4)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.PKID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.CTYPE) ?? ""); command.Parameters.Add(command_p1); }
+                { var command_p2 = command.CreateParameter(); command_p2.ParameterName = "@p2"; command_p2.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p2); }
+                { var command_p3 = command.CreateParameter(); command_p3.ParameterName = "@p3"; command_p3.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p3); }
+                { var command_p4 = command.CreateParameter(); command_p4.ParameterName = "@p4"; command_p4.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p4); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

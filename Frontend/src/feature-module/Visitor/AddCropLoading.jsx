@@ -166,7 +166,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                         const charges = parseFloat(item.charges || 0);
                                         const totalWeight = count * msize;
                                         const expense = msize > 0 ? totalWeight * charges : parseFloat(item.expense || 0);
-                                        return { ...item, msize: match ? match.msize : "", expense };
+                                        return { ...item, msize: match ? match.msize : (item.msize || ""), expense };
                                     });
                                 }
                             } catch (err) {
@@ -348,7 +348,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                     faid: row.faid || "",
                     ciaid: row?.ciaid || "",
                     totcr: row?.count.toString() || "",
-                    totwt: parseInt(row?.count) * parseInt(row?.msize || 0) || 0,
+                    totwt: parseFloat(row?.count || 0) * parseFloat(row?.msize || 0) || 0,
                     trntid: "O",
                     cgrade: row?.cgrade || "",
                     isdeleted: false,
@@ -633,7 +633,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 const charges = parseFloat(item.charges || 0);
                 const msize = parseFloat(item.msize || 0);
                 const totalWeight = newCount * msize;
-                const totalamount = totalWeight * rate;
+                const totalamount = Math.round(totalWeight * rate * 100) / 100;
                 let expense;
                 if (name === 'expense') {
                     expense = parseFloat(value) || 0;
@@ -867,7 +867,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                 required
                                                                 placeholder="Select Trader"
                                                                 options={Trader}
-                                                                value={Trader.find(option => option.value === formData.Trader) || null}
+                                                                value={Trader.find(option => String(option.value) === String(formData.Trader)) || null}
                                                                 onChange={handleTraderChange}
                                                                 styles={{
                                                                     control: (provided) => ({
@@ -1081,6 +1081,7 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                                                                             const modal = window.bootstrap.Modal.getOrCreateInstance(modalElement);
                                                                             modal.show();
                                                                         }
+                                                                        console.log("Print Bill clicked, modal should open", formData, TableData1);
                                                                     }}
                                                                 >
                                                                     Print Bill
@@ -1112,13 +1113,13 @@ const AddCropLoading = ({ onRefresh, SLVMID, onSaved, refreshKey }) => {
                 modalId="loading-bill-receipt"
                 billNo={formData.PoNo || SLVMID || ''}
                 date={formData.date ? formatDate_1(formData.date) : ''}
-                farmerName={Trader.find(t => t.value === formData.Trader)?.label || ''}
+                farmerName={Trader.find(t => String(t.value) === String(formData.Trader))?.label || ''}
                 mobileNo=""
                 vehNo={formData.VehicleNumber || ''}
                 tableData={TableData1.filter(r => parseInt(r.isdeleted || 0) !== 1 && parseFloat(r.count) > 0).map(r => ({
                     cratecount: r.count,
-                    rate: r.expense ? (r.expense / (parseFloat(r.count) || 1)).toFixed(2) : '0',
-                    weight: r.totalamount ? r.totalamount.toFixed(2) : '0'
+                    rate: parseFloat(r.rate || 0).toFixed(2),
+                    weight: (parseFloat(r.count || 0) * parseFloat(r.msize || 0)).toFixed(2)
                 }))}
                 totalAmount={TableData1.filter(r => parseInt(r.isdeleted || 0) !== 1).reduce((sum, r) => sum + (parseFloat(r.totalamount) || 0), 0)}
             />

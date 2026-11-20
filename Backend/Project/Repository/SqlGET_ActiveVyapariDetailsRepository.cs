@@ -17,7 +17,9 @@ namespace Project.Repository
             List<GET_ActiveVyapariDetails> list = new List<GET_ActiveVyapariDetails>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_ActiveVyapariDetails]('" + input.COMPANYID + "' , '" + input.DEPTID + "' )";
+                command.CommandText = "SELECT * FROM [GET_ActiveVyapariDetails](@p0 , @p1 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_CheckSRNO_Exist> list = new List<GET_CheckSRNO_Exist>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT  * FROM [GET_CheckSRNO_Exist]('" + input.SRNO + "')";
+                command.CommandText = "SELECT  * FROM [GET_CheckSRNO_Exist](@p0)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.SRNO) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

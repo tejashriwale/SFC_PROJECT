@@ -17,7 +17,8 @@ namespace Project.Repository
             List<GET_VyapariBillMaster> result = new List<GET_VyapariBillMaster>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_VyapariBillMaster]('" + input.BILLNO + "' )";
+                command.CommandText = "SELECT * FROM [GET_VyapariBillMaster](@p0 )";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.BILLNO) ?? ""); command.Parameters.Add(command_p0); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

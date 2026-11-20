@@ -17,7 +17,13 @@ namespace Project.Repository
             List<GET_SalesReport> list = new List<GET_SalesReport>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT  * FROM [GET_SalesReport]('" + input.MAID + "' ,'" + input.SLVMID + "' ,  '" + input.COMPANYID + "'   ,'" + input.DEPTID + "','" + input.SDATE + "','" + input.EDATE + "')";
+                command.CommandText = "SELECT  * FROM [GET_SalesReport](@p0 ,@p1 ,  @p2   ,@p3,@p4,@p5)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.MAID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.SLVMID) ?? ""); command.Parameters.Add(command_p1); }
+                { var command_p2 = command.CreateParameter(); command_p2.ParameterName = "@p2"; command_p2.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p2); }
+                { var command_p3 = command.CreateParameter(); command_p3.ParameterName = "@p3"; command_p3.Value = (object)(Convert.ToString(input.DEPTID) ?? ""); command.Parameters.Add(command_p3); }
+                { var command_p4 = command.CreateParameter(); command_p4.ParameterName = "@p4"; command_p4.Value = (object)(Convert.ToString(input.SDATE) ?? ""); command.Parameters.Add(command_p4); }
+                { var command_p5 = command.CreateParameter(); command_p5.ParameterName = "@p5"; command_p5.Value = (object)(Convert.ToString(input.EDATE) ?? ""); command.Parameters.Add(command_p5); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

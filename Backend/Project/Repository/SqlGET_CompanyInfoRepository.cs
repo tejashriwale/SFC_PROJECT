@@ -17,7 +17,9 @@ namespace Project.Repository
             List<GET_CompanyInfo> list = new List<GET_CompanyInfo>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT Top 20 * FROM [GET_CompanyInfo]('" + input.CINFOID + "' , '" + input.KEYWORD + "')";
+                command.CommandText = "SELECT Top 20 * FROM [GET_CompanyInfo](@p0 , @p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.CINFOID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())
@@ -54,7 +56,9 @@ namespace Project.Repository
             List<GET_CompanyInfo> list = new List<GET_CompanyInfo>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM [GET_CompanyInfo]('" + input.CINFOID + "' , '" + input.KEYWORD + "')";
+                command.CommandText = "SELECT * FROM [GET_CompanyInfo](@p0 , @p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.CINFOID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

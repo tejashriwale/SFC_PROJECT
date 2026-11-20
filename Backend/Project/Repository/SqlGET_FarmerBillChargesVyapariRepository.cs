@@ -19,7 +19,9 @@ namespace Project.Repository
             List<GET_FarmerBillChargesVyapari> list = new List<GET_FarmerBillChargesVyapari>();
             using (var command = dbContext.Database.GetDbConnection().CreateCommand())
             {
-                command.CommandText = "SELECT * FROM[GET_FarmerBillChargesVyapari]( '" + input.BAID + "' , '"+input.BILLNO+"')";
+                command.CommandText = "SELECT * FROM[GET_FarmerBillChargesVyapari]( @p0 , @p1)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.BAID) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.BILLNO) ?? ""); command.Parameters.Add(command_p1); }
                 dbContext.Database.OpenConnection();
 
                 using (var reader = await command.ExecuteReaderAsync())

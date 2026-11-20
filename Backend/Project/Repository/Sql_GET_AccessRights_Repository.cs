@@ -53,7 +53,10 @@ namespace Project.Repository
           using(var command = dbContext.Database.GetDbConnection().CreateCommand())
             
           {
-                command.CommandText = "SELECT * FROM [dbo].[GET_AccessRights]('"+ input.AccessRightsAutoID1 + "' , '"+input.KEYWORD+ "' , '"+input.COMPANYID+"')";
+                command.CommandText = "SELECT * FROM [dbo].[GET_AccessRights](@p0 , @p1 , @p2)";
+                { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.AccessRightsAutoID1) ?? ""); command.Parameters.Add(command_p0); }
+                { var command_p1 = command.CreateParameter(); command_p1.ParameterName = "@p1"; command_p1.Value = (object)(Convert.ToString(input.KEYWORD) ?? ""); command.Parameters.Add(command_p1); }
+                { var command_p2 = command.CreateParameter(); command_p2.ParameterName = "@p2"; command_p2.Value = (object)(Convert.ToString(input.COMPANYID) ?? ""); command.Parameters.Add(command_p2); }
 
                
                 dbContext.Database.OpenConnection();

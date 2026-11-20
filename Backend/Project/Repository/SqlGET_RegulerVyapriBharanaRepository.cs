@@ -19,7 +19,8 @@ namespace Project.Repository
                 List<GET_RegulerVyapriBharana> result = new List<GET_RegulerVyapriBharana>();
                 using (var command = dbContext.Database.GetDbConnection().CreateCommand())
                 {
-                    command.CommandText = "SELECT * FROM [GET_RegulerVyapriBharana]('" + input.VDAID + "' )";
+                    command.CommandText = "SELECT * FROM [GET_RegulerVyapriBharana](@p0 )";
+                    { var command_p0 = command.CreateParameter(); command_p0.ParameterName = "@p0"; command_p0.Value = (object)(Convert.ToString(input.VDAID) ?? ""); command.Parameters.Add(command_p0); }
                     dbContext.Database.OpenConnection();
 
                     using (var reader = await command.ExecuteReaderAsync())

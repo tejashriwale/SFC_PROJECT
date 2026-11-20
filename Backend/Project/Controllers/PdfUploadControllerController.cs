@@ -1,4 +1,4 @@
-﻿using matrimonybackendApi.Models.DTO;
+using matrimonybackendApi.Models.DTO;
 using matrimonybackendApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using PdfSharpCore.Pdf;
@@ -30,7 +30,8 @@ namespace matrimonybackendApi.Controllers
             for (int i = 0; i < dto.Files.Count; i++)
             {
                 var file = dto.Files[i];
-                var fileName = dto.FileNames[i];
+                var fileName = Path.GetFileName(dto.FileNames[i] ?? "");
+                if (string.IsNullOrWhiteSpace(fileName)) return BadRequest("Invalid file name.");
 
                 // ✅ Check if filename already ends with .pdf, if not, append
                 if (!fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
@@ -58,7 +59,9 @@ namespace matrimonybackendApi.Controllers
             if (!Directory.Exists(uploadPath))
                 Directory.CreateDirectory(uploadPath);
 
-            var outputFilePath = Path.Combine(uploadPath, $"{dto.OutputFileName}.pdf");
+            var safeOutputName = Path.GetFileNameWithoutExtension(Path.GetFileName(dto.OutputFileName ?? ""));
+            if (string.IsNullOrWhiteSpace(safeOutputName)) return BadRequest("Invalid output file name.");
+            var outputFilePath = Path.Combine(uploadPath, $"{safeOutputName}.pdf");
 
             using (var outputDoc = new PdfDocument())
             {
@@ -77,8 +80,8 @@ namespace matrimonybackendApi.Controllers
             return Ok(new
             {
                 Message = "PDFs merged successfully.",
-                MergedFileName = dto.OutputFileName,
-                Url = $"/Images/{dto.OutputFileName}.pdf"  // Ensure the merged file path is also in the Images folder
+                MergedFileName = safeOutputName,
+                Url = $"/Images/{safeOutputName}.pdf"  // Ensure the merged file path is also in the Images folder
             });
         }
 

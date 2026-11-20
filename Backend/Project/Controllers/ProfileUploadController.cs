@@ -75,6 +75,17 @@ namespace Project.Controllers
 
                 if (file.Length > 10 * 1024 * 1024)
                     return Tuple.Create(false, "File size exceeds 10MB.");
+
+                var header = new byte[4];
+                using (var hs = file.OpenReadStream())
+                {
+                    if (hs.Read(header, 0, 4) < 4)
+                        return Tuple.Create(false, "Invalid image file.");
+                }
+                bool isJpg = header[0] == 0xFF && header[1] == 0xD8;
+                bool isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
+                if (!isJpg && !isPng)
+                    return Tuple.Create(false, "File content is not a valid JPG or PNG image.");
             }
 
             return Tuple.Create(true, "Valid");

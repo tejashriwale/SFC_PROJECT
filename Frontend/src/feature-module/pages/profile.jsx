@@ -145,7 +145,8 @@ const Profile = () => {
                     <input
                       type={isPasswordVisible ? "text" : "password"}
                       className="pass-input form-control"
-                      value={userdetail?.Password || ''}
+                      value="********"
+                      readOnly
                     />
                     <span
                       className={`fas toggle-password ${isPasswordVisible ? "fa-eye" : "fa-eye-slash"
