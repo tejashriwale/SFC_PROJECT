@@ -57,7 +57,7 @@ namespace Project.Controllers
                 foreach (var u in dto)
                 {
                     u.Password = ""; // never send the stored password to the client
-                    if (u.Status != 1 && !string.IsNullOrEmpty(u.UAID))
+                    if (!string.IsNullOrEmpty(u.UAID))
                         u.Token = CreateToken(u);
                 }
                 return Ok(dto);

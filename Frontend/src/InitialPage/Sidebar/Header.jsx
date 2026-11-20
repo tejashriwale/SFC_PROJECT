@@ -154,11 +154,12 @@ const Header = () => {
           }
         });
       }
-      clearUserData();
-      navigate("/signin");
     } catch (error) {
       console.error("❌ Logout failed:", error);
-
+    } finally {
+      // always allow the user to leave, even if the server call failed
+      clearUserData();
+      navigate("/signin");
     }
 
   }

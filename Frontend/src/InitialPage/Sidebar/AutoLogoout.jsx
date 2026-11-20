@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { baseUrl } from '../../core/json/custom';
-import { getUserData } from '../../Context/UserData';
+import { getUserData, clearUserData } from '../../Context/UserData';
 
 const AutoLogout = ({ children }) => {
     const navigate = useNavigate();
@@ -26,6 +26,7 @@ const AutoLogout = ({ children }) => {
         }
 
         if (!fromUnload) {
+            clearUserData(); // drop the JWT and axios header once the server was told we are logged out
             navigate('/signin');
         }
     };
@@ -36,7 +37,7 @@ const AutoLogout = ({ children }) => {
     };
     useEffect(() => {
         const handlePageHide = () => {
-            logout(false);
+            logout(true);
         };
 
         window.addEventListener("pagehide", handlePageHide);
@@ -208,7 +209,7 @@ const AutoLogout = ({ children }) => {
     useEffect(() => {
         const handleUnload = () => {
 
-            logout();
+            logout(true);
         };
 
 

@@ -1520,6 +1520,8 @@ var jwtConfig = builder.Configuration.GetSection("Jwt");
 // Signing key: set Jwt__Key (env var / user-secrets) in production. If empty, a random per-process key is used (tokens reset on restart).
 var jwtKey = jwtConfig["Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
+    Console.WriteLine("WARNING: Jwt:Key is not configured - using a random key; tokens become invalid on every restart. Set Jwt__Key.");
+if (string.IsNullOrWhiteSpace(jwtKey))
     jwtKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48));
 builder.Services.AddSingleton(new SfcJwtSettings(jwtKey, jwtConfig["Issuer"] ?? "SFC", jwtConfig["Audience"] ?? "SFC",
     int.TryParse(jwtConfig["DurationInMinutes"], out var jwtMinutes) ? jwtMinutes : 720));
@@ -1568,6 +1570,17 @@ var app = builder.Build();
 // Use environment-specific CORS policy
 var corsPolicy = app.Environment.IsDevelopment() ? "AllowAll" : "Production";
 app.UseCors(corsPolicy); // ✅ Ensure CORS is applied before anything else
+
+// Global error handler: never leak exception details to clients
+app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
+{
+    var feature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+    if (feature?.Error != null)
+        app.Logger.LogError(feature.Error, "Unhandled exception on {Path}", context.Request.Path);
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    context.Response.ContentType = "application/json";
+    await context.Response.WriteAsync("{\"error\":\"Internal server error.\"}");
+}));
 
 // Set path base for production IIS sub-path deployment
 // Use lowercase to match frontend API calls (/backend not /Backend)

@@ -1,0 +1,31 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "shadimuharathConStrt": "Server=ADSVR\\SQLEXPRESS01;Database=InventoryManagement;User ID=sa;Password=123456;TrustServerCertificate=True;"
+  },
+  "SMTP": {
+    "Host": "smtp.gmail.com",
+    "Port": "587",
+    "Username": "sanketjchaudhari@gmail.com",
+    "Password": "dsqh lidu lgrq quch",
+    "EnableSSL": "true"
+  },
+  "Jwt": {
+    "Key": "",
+    "Issuer": "SFC",
+    "Audience": "SFC",
+    "DurationInMinutes": "720"
+  },
+  "RequireAuth": false
+
+
+
+
+
+}

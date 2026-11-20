@@ -1,10 +1,14 @@
 import axios from "axios";
 
 // userData.js
-const userData = JSON.parse(localStorage.getItem("userData")) || {
-    isAuthenticated: false,
-    userdetail: null,
+const loadUserData = () => {
+    try {
+        return JSON.parse(localStorage.getItem("userData")) || { isAuthenticated: false, userdetail: null };
+    } catch {
+        return { isAuthenticated: false, userdetail: null };
+    }
 };
+const userData = loadUserData();
 
 // Attach the JWT (if any) to every API call
 const setAuthToken = (token) => {
